@@ -14,16 +14,16 @@ X: Niet werkend of niet geïmplementeerd
 | 2 | Transformaties            | V |
 |   | Eye-point                 | V |
 |   | Projectie                 | V |
-| 3 | Platonische Lichamen      | X |
-|   | Kegel en cylinder         | X |
-|   | Bol                       | X |
-|   | Torus                     | X |
-|   | 3D L-systemen             | X |
-| 4 | Z-buffering (lijnen)      | X |
-| 5 | Triangulatie              | X |
-|   | Z-buffering (driehoeken)  | X |
-| 6 | 3D fractalen              | X |
-|   | BuckyBall                 | X |
+| 3 | Platonische Lichamen      | V |
+|   | Kegel en cylinder         | V |
+|   | Bol                       | V |
+|   | Torus                     | V |
+|   | 3D L-systemen             | V |
+| 4 | Z-buffering (lijnen)      | V |
+| 5 | Triangulatie              | V |
+|   | Z-buffering (driehoeken)  | V |
+| 6 | 3D fractalen              | V |
+|   | BuckyBall                 | V |
 |   | Mengerspons               | X |
 |   | View Frustum              | X |
 | 7 | Ambient licht             | X |
