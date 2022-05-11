@@ -1,4 +1,4 @@
-# Install script for directory: /home/simon/Desktop/Engine
+# Install script for directory: /home/simon/Desktop/EngineGit
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -43,25 +43,25 @@ if(NOT DEFINED CMAKE_OBJDUMP)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  if(EXISTS "$ENV{DESTDIR}/home/simon/Desktop/Engine/engine" AND
-     NOT IS_SYMLINK "$ENV{DESTDIR}/home/simon/Desktop/Engine/engine")
+  if(EXISTS "$ENV{DESTDIR}/home/simon/Desktop/EngineGit/engine" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}/home/simon/Desktop/EngineGit/engine")
     file(RPATH_CHECK
-         FILE "$ENV{DESTDIR}/home/simon/Desktop/Engine/engine"
+         FILE "$ENV{DESTDIR}/home/simon/Desktop/EngineGit/engine"
          RPATH "")
   endif()
   list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
-   "/home/simon/Desktop/Engine/engine")
+   "/home/simon/Desktop/EngineGit/engine")
   if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
   if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
-  file(INSTALL DESTINATION "/home/simon/Desktop/Engine" TYPE EXECUTABLE FILES "/home/simon/Desktop/Engine/cmake-build-debug/engine")
-  if(EXISTS "$ENV{DESTDIR}/home/simon/Desktop/Engine/engine" AND
-     NOT IS_SYMLINK "$ENV{DESTDIR}/home/simon/Desktop/Engine/engine")
+  file(INSTALL DESTINATION "/home/simon/Desktop/EngineGit" TYPE EXECUTABLE FILES "/home/simon/Desktop/EngineGit/cmake-build-debug/engine")
+  if(EXISTS "$ENV{DESTDIR}/home/simon/Desktop/EngineGit/engine" AND
+     NOT IS_SYMLINK "$ENV{DESTDIR}/home/simon/Desktop/EngineGit/engine")
     if(CMAKE_INSTALL_DO_STRIP)
-      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}/home/simon/Desktop/Engine/engine")
+      execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}/home/simon/Desktop/EngineGit/engine")
     endif()
   endif()
 endif()
@@ -74,5 +74,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/simon/Desktop/Engine/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/simon/Desktop/EngineGit/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
