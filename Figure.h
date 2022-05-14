@@ -52,11 +52,19 @@ class Figures{
     std::vector<Figure> figures;
     Mycolor BackGroundcolor;
     Matrix EyePointMatrix;
+    double dNear;
+    double dFar;
+    double right;
+    double left;
+    double top;
+    double bottom;
 
 public:
     Figures(const ini::Configuration &configuration);
     img::EasyImage Draw_3Dlines(const ini::Configuration &configuration);
     img::EasyImage Draw_3Dtria(const ini::Configuration &configuration);
+    std::vector<Triangle> clipFigures(std::vector<Triangle> triangles);
+    double getP(Vector3D p1, Vector3D p2, double val, double dNear, int teller);
 };
 
 

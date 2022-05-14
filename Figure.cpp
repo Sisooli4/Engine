@@ -102,6 +102,28 @@ Figures::Figures(const ini::Configuration &configuration) {
     BackGroundcolor = Mycolor(color[0], color[1], color[2]);
     std::vector<double> Eye = configuration["General"]["eye"];
     EyePointMatrix = EyePointTrans(Vector3D::point(Eye[0], Eye[1], Eye[2]));
+    if(configuration["General"]["clipping"].exists()) {
+        if (configuration["General"]["clipping"].as_bool_or_die()) {
+            double theta1;
+            double phi1;
+            double r1;
+            double theta2;
+            double phi2;
+            double r2;
+            std::vector<double> view = configuration["General"]["viewDirection"];
+            Vector3D viewDirection = Vector3D::point(-view[0], -view[1], -view[2]);
+            toPolar(viewDirection, theta1, phi1, r1);
+            toPolar(Vector3D::point(Eye[0], Eye[1], Eye[2]), theta2, phi2, r2);
+            EyePointMatrix = EyePointTrans(Vector3D::point(phi1, theta1, r2));
+            dNear = configuration["General"]["dNear"].as_double_or_die();
+            dFar = configuration["General"]["dFar"].as_double_or_die();
+            right = dNear * tan(configuration["General"]["hfov"].as_double_or_die() / 2);
+            left = -right;
+            top = right / configuration["General"]["aspectRatio"].as_double_or_die();
+            bottom = -top;
+        }
+    }
+
     for (auto i=0 ; i<int(configuration["General"]["nrFigures"]); i++){
         Figures3D figures3D = {};
         Figure(configuration["Figure" + std::to_string(i)], figures3D);
@@ -137,7 +159,12 @@ img::EasyImage Figures::Draw_3Dlines(const ini::Configuration &configuration) {
             Lines.push_back(l);}
         }
     }
-    return Draw_lines(configuration, Lines);
+    if(Lines.empty()){
+        return img::EasyImage();
+    }
+    else{
+        return Draw_lines(configuration, Lines);
+    }
 }
 
 img::EasyImage Figures::Draw_3Dtria(const ini::Configuration &configuration) {
@@ -162,7 +189,146 @@ img::EasyImage Figures::Draw_3Dtria(const ini::Configuration &configuration) {
             }
         }
         }
+    if(configuration["General"]["clipping"].exists()){
+        if(configuration["General"]["clipping"]){
+            Triangles = clipFigures(Triangles);
+        }
+    }
     return Draw_tria(configuration, Triangles);
+}
+
+std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
+    std::vector<double> edges = {-dNear, -dFar, right, left, top, bottom};
+    int teller = 0;
+    double A;
+    double B;
+    double C;
+    double p;
+    for (auto value: edges) {
+        std::vector<Triangle> Triangles = {};
+        for (auto i: triangles) {
+            if (teller == 0 or teller == 1){
+                A = i.getA().z;
+                B = i.getB().z;
+                C = i.getC().z;
+            }
+            else if(teller == 2 or teller == 3) {
+                A = doProjection(i.getA(), dNear).x;
+                B = doProjection(i.getB(), dNear).x;
+                C = doProjection(i.getC(), dNear).x;
+            }
+            else{
+                A = doProjection(i.getA(), dNear).y;
+                B = doProjection(i.getB(), dNear).y;
+                C = doProjection(i.getC(), dNear).y;
+            }
+            if(teller == 0 or teller == 2 or teller == 4) {
+                if (A < value and B < value and C < value) {
+                    Triangles.push_back(i);
+                } else if (A < value and B < value and C > value) {
+                    p = getP(i.getA(), i.getC(), value, dNear, teller);
+                    Vector3D p1 = p*i.getA()+(1-p)*i.getC();
+                    Triangles.push_back(Triangle(i.getA(), i.getB(), p1, i.getColor()));
+                    p = getP(i.getB(), i.getC(), value, dNear, teller);
+                    Vector3D p2 = p*i.getB()+(1-p)*i.getC();
+                    Triangles.push_back(Triangle(p1, i.getB(), p2, i.getColor()));
+                } else if (A > value and B < value and C < value) {
+                    p = getP(i.getA(), i.getB(), value, dNear, teller);
+                    Vector3D p1 = p*i.getA()+(1-p)*i.getB();
+                    Triangles.push_back(Triangle(p1, i.getB(), i.getC(), i.getColor()));
+                    p = getP(i.getA(), i.getC(), value, dNear, teller);
+                    Vector3D p2 = p*i.getA()+(1-p)*i.getC();
+                    Triangles.push_back(Triangle(p2, p1, i.getC(), i.getColor()));
+                } else if (A < value and B > value and C < value) {
+                    p = getP(i.getB(), i.getC(), value, dNear, teller);
+                    Vector3D p1 = p*i.getB()+(1-p)*i.getC();
+                    Triangles.push_back(Triangle(i.getA(), p1, i.getC(), i.getColor()));
+                    p = getP(i.getA(), i.getB(), value, dNear, teller);
+                    Vector3D p2 = p*i.getA()+(1-p)*i.getB();
+                    Triangles.push_back(Triangle(i.getA(), p2, p1, i.getColor()));
+                } else if (A < value and B > value and C > value) {
+                    p = getP(i.getA(), i.getB(), value, dNear, teller);
+                    Vector3D p1 = p*i.getA()+(1-p)*i.getB();
+                    p = getP(i.getA(), i.getC(), value, dNear, teller);
+                    Vector3D p2 = p*i.getA()+(1-p)*i.getC();
+                    Triangles.push_back(Triangle(i.getA(), p1, p2, i.getColor()));
+                } else if (A > value and B < value and C > value) {
+                    p = getP(i.getB(), i.getC(), value, dNear, teller);
+                    Vector3D p1 = p*i.getB()+(1-p)*i.getC();
+                    p = getP(i.getA(), i.getB(), value, dNear, teller);
+                    Vector3D p2 = p*i.getA()+(1-p)*i.getB();
+                    Triangles.push_back(Triangle(p2, i.getB(), p1, i.getColor()));
+                } else if (A > value and B > value and C < value) {
+                    p = getP(i.getA(), i.getC(), value, dNear, teller);
+                    Vector3D p1 = p*i.getA()+(1-p)*i.getC();
+                    p = getP(i.getC(), i.getB(), value, dNear, teller);
+                    Vector3D p2 = p*i.getC()+(1-p)*i.getB();
+                    Triangles.push_back(Triangle(p1, p2, i.getC(), i.getColor()));
+                }
+            }
+            else{
+                if (A > value and B > value and C > value) {
+                    Triangles.push_back(i);
+                } else if (A > value and B > value and C < value) {
+                    p = getP(i.getA(), i.getC(), value, dNear, teller);
+                    Vector3D p1 = p*i.getA()+(1-p)*i.getC();
+                    Triangles.push_back(Triangle(i.getA(), i.getB(), p1, i.getColor()));
+                    p = getP(i.getB(), i.getC(), value, dNear, teller);
+                    Vector3D p2 = p*i.getB()+(1-p)*i.getC();
+                    Triangles.push_back(Triangle(p1, i.getB(), p2, i.getColor()));
+
+                } else if (A < value and B > value and C > value) {
+                    p = getP(i.getA(), i.getB(), value, dNear, teller);
+                    Vector3D p1 = p*i.getA()+(1-p)*i.getB();
+                    Triangles.push_back(Triangle(p1, i.getB(), i.getC(), i.getColor()));
+                    p = getP(i.getA(), i.getC(), value, dNear, teller);
+                    Vector3D p2 = p*i.getA()+(1-p)*i.getC();
+                    Triangles.push_back(Triangle(p2, p1, i.getC(), i.getColor()));
+                } else if (A > value and B < value and C > value) {
+                    p = getP(i.getB(), i.getC(), value, dNear, teller);
+                    Vector3D p1 = p*i.getB()+(1-p)*i.getC();
+                    Triangles.push_back(Triangle(i.getA(), p1, i.getC(), i.getColor()));
+                    p = getP(i.getA(), i.getB(), value, dNear, teller);
+                    Vector3D p2 = p*i.getA()+(1-p)*i.getB();
+                    Triangles.push_back(Triangle(i.getA(), p2, p1, i.getColor()));
+                } else if (A > value and B < value and C < value) {
+                    p = getP(i.getA(), i.getB(), value, dNear, teller);
+                    Vector3D p1 = p*i.getA()+(1-p)*i.getB();
+                    p = getP(i.getA(), i.getC(), value, dNear, teller);
+                    Vector3D p2 = p*i.getA()+(1-p)*i.getC();
+                    Triangles.push_back(Triangle(i.getA(), p1, p2, i.getColor()));
+                } else if (A < value and B > value and C < value) {
+                    p = getP(i.getB(), i.getC(), value, dNear, teller);
+                    Vector3D p1 = p*i.getB()+(1-p)*i.getC();
+                    p = getP(i.getA(), i.getB(), value, dNear, teller);
+                    Vector3D p2 = p*i.getA()+(1-p)*i.getB();
+                    Triangles.push_back(Triangle(p2, i.getB(), p1, i.getColor()));
+                } else if (A < value and B < value and C > value) {
+                    p = getP(i.getA(), i.getC(), value, dNear, teller);
+                    Vector3D p1 = p*i.getA()+(1-p)*i.getC();
+                    p = getP(i.getC(), i.getB(), value, dNear, teller);
+                    Vector3D p2 = p*i.getC()+(1-p)*i.getB();
+                    Triangles.push_back(Triangle(p1, p2, i.getC(), i.getColor()));
+                }
+        }
+        }
+        triangles = Triangles;
+        teller += 1;
+    }
+    return triangles;
+}
+
+double Figures::getP(Vector3D p1, Vector3D p2, double val, double dNear, int teller) {
+    double p;
+    if (teller == 0 or teller == 1){
+        p = (val-p2.z)/(p1.z-p2.z);
+    }
+    else if(teller == 2 or teller == 3){
+        p = (p2.x*dNear+p2.z*val)/((p2.x-p1.x)*dNear+(p2.z-p1.z)*val);
+    }
+    else{
+        p = (p2.y*dNear+p2.z*val)/((p2.y-p1.y)*dNear+(p2.z-p1.z)*val);
+    }
 }
 
 
@@ -239,6 +405,12 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D) {
             faces = f.faces;
         }
 
+        else if(conf["type"].as_string_or_die() == "BuckyBall"){
+            Figure f = createBuckyBall();
+            points = f.points;
+            faces = f.faces;
+        }
+
         else if(conf["type"].as_string_or_die() == "FractalTetrahedron"){
             Figure f = createTetrahedron();
             std::vector<Figure> figures = {};
@@ -278,6 +450,10 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D) {
             std::vector<Figure> figures = {};
             generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf);
             figures3D = figures;
+        }
+        else{
+            Figure f = Figure();
+            figures3D.push_back(f);
         }
     }
     std::string str = conf["type"].as_string_or_die();

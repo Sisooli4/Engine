@@ -31,6 +31,8 @@ Point2D::~Point2D() {
 
 }
 
+Point2D::Point2D() {}
+
 const Point2D &Line2D::getP1() const {
     return p1;
 }
@@ -489,6 +491,8 @@ img::EasyImage Draw_tria(const ini::Configuration& configuration, std::vector<Tr
 Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Point2D &aa, const Point2D &ba,
                    const Point2D &ca, const Mycolor &c1) : A(a), B(b), C(c), Aa(aa), Ba(ba), Ca(ca), color(c1) {}
 
+Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, Mycolor Color) : A(a), B(b), C(c), color(Color){}
+
 const Vector3D &Triangle::getA() const {
     return A;
 }
@@ -544,6 +548,8 @@ void Triangle::setCa(const Point2D &ca) {
 void Triangle::setC1(const Mycolor &c) {
     Triangle::color = c;
 }
+
+
 
 
 

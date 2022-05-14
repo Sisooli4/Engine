@@ -21,6 +21,8 @@ public:
 
     Point2D(double x, double y);
 
+    Point2D();
+
     virtual ~Point2D();
 
     double getX() const;
@@ -122,6 +124,8 @@ class Triangle{
     Mycolor color;
 
 public:
+    Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Mycolor color);
+
     Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Point2D &aa, const Point2D &ba,
              const Point2D &ca, const Mycolor &color);
 
