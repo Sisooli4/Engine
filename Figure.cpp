@@ -720,19 +720,31 @@ void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_ite
     if (nr_iterations!=0){
         Matrix Ms = scaleFigure(1.0/3.0);
         applyTransformation(const_cast<Figure &>(F), Ms);
+        int teller = 0;
         for(auto i = 0.0; i<(double)F.points.size(); i += 0.5) {
-            if (std::fmod(i,1) == 0){
-                Figure Fi = F;
-                Matrix Mt = translate(fig.points[i] - Fi.points[i]);
-                applyTransformation(Fi, Mt);
-                createMengerSponge(conf, fractal, nr_iterations - 1, Fi);
+            if (teller ==0){
+                for (int j=0; j<5;j++){
+                    for (int i=0; i<3; i++){
+                        Figure Fig = F;
+                        Matrix Mt = translate((fig.points[faces[j].point_indexes[i]]+fig.points[faces[j].point_indexes[i+1]])/2.0 - (Fig.points[faces[j].point_indexes[i]]+Fig.points[faces[j].point_indexes[i+1]])/2.0);
+                        applyTransformation(Fig, Mt);
+                        teller = 1;
+                        std::vector<double> C = conf["color"];
+                        Fig.color = Mycolor(C[0], C[1], C[2]);
+
+                        std::vector<double> center = conf["center"];
+                        Fig.TFM = CreateTransformationMatrix(conf["rotateX"].as_double_or_die()*M_PI/180, conf["rotateY"].as_double_or_die()*M_PI/180, conf["rotateZ"].as_double_or_die()*M_PI/180, conf["scale"], Vector3D::point(center[0], center[1], center[2]));
+                        fractal.push_back(Fig);
+                        if(nr_iterations>1){
+                            createMengerSponge(conf,fractal,nr_iterations-1,Fig);
+                        }
+                    }
                 }
-            else{
-                Figure Fi = F;
-                Matrix Mt = translate((fig.points[floor(i)]+fig.points[floor(i)+1])/2.0 - (Fi.points[floor(i)]+Fi.points[floor(i)+1])/2/0);
-                applyTransformation(Fi, Mt);
-                createMengerSponge(conf, fractal, nr_iterations - 1, Fi);
             }
+            Figure Fi = F;
+            Matrix Mt = translate(fig.points[i] - Fi.points[i]);
+            applyTransformation(Fi, Mt);
+            createMengerSponge(conf, fractal, nr_iterations - 1, Fi);
         }
     }
     else{
