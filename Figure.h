@@ -67,8 +67,6 @@ public:
     double getP(Vector3D p1, Vector3D p2, double val, double dNear, int teller);
 };
 
-
-
 class Figure {
 public:
     Figure(const std::vector<Vector3D> &points, const std::vector<Face> &faces);
@@ -102,7 +100,11 @@ public:
 
     Figure createBuckyBall();
 
+    void createMengerSponge(ini::Section conf, Figures3D& fractal, int nrIterations, const Figure& cube);
+
     Figure LS3D(std::string inputfile);
+
+    void applyTransformation(Figure &fig, const Matrix &m);
 
 
 };

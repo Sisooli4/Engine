@@ -411,6 +411,12 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D) {
             faces = f.faces;
         }
 
+        else if(conf["type"].as_string_or_die() == "MengerSponge"){
+            std::vector<Figure> figures;
+            createMengerSponge(conf, figures, conf["nrIterations"], createCube());
+            figures3D = figures;
+        }
+
         else if(conf["type"].as_string_or_die() == "FractalTetrahedron"){
             Figure f = createTetrahedron();
             std::vector<Figure> figures = {};
@@ -468,7 +474,6 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D) {
                                          Vector3D::point(center[0], center[1], center[2]));
         figures3D.push_back(*this);
     }
-
 }
 
 Figure::Figure(const std::vector<Vector3D> &points, const std::vector<Face> &faces) : points(points), faces(faces) {}
@@ -643,42 +648,58 @@ Figure Figure::createBuckyBall() {
     Figure f = createIcosahedron();
     std::vector<Face> Faces;
     std::vector<Vector3D> Points;
-        for(auto tria:f.faces){
-        Vector3D p1 = Vector3D::point(points[tria.point_indexes[0]].x, points[tria.point_indexes[0]].y, points[tria.point_indexes[0]].z);
-        Vector3D p2 = Vector3D::point(points[tria.point_indexes[1]].x, points[tria.point_indexes[1]].y, points[tria.point_indexes[1]].z);
-        Vector3D p3 = Vector3D::point(points[tria.point_indexes[2]].x, points[tria.point_indexes[2]].y, points[tria.point_indexes[2]].z);
+        for(auto tria:f.faces) {
+            Vector3D p1 = Vector3D::point(points[tria.point_indexes[0]].x, points[tria.point_indexes[0]].y,
+                                          points[tria.point_indexes[0]].z);
+            Vector3D p2 = Vector3D::point(points[tria.point_indexes[1]].x, points[tria.point_indexes[1]].y,
+                                          points[tria.point_indexes[1]].z);
+            Vector3D p3 = Vector3D::point(points[tria.point_indexes[2]].x, points[tria.point_indexes[2]].y,
+                                          points[tria.point_indexes[2]].z);
 
 
-        Points.push_back(Vector3D::point(p1.x*2/3 + p2.x/ 3,
-                                         p1.y*2/3 + p2.y/ 3,
-                                         p1.z*2/3 + p2.z/ 3));
+            Points.push_back(Vector3D::point(p1.x * 2 / 3 + p2.x / 3,
+                                             p1.y * 2 / 3 + p2.y / 3,
+                                             p1.z * 2 / 3 + p2.z / 3));
 
-        Points.push_back(Vector3D::point(p1.x*2/3 + p2.x/ 3+p1.x*2/3 + p2.x/ 3-p1.x,
-                                         p1.y*2/3 + p2.y/ 3+p1.y*2/3 + p2.y/ 3-p1.y,
-                                         p1.z*2/3 + p2.z/ 3+p1.z*2/3 + p2.z/ 3-p1.z));
+            Points.push_back(Vector3D::point(p1.x * 2 / 3 + p2.x / 3 + p1.x * 2 / 3 + p2.x / 3 - p1.x,
+                                             p1.y * 2 / 3 + p2.y / 3 + p1.y * 2 / 3 + p2.y / 3 - p1.y,
+                                             p1.z * 2 / 3 + p2.z / 3 + p1.z * 2 / 3 + p2.z / 3 - p1.z));
 
-        Points.push_back(Vector3D::point(p2.x*2/3 + p3.x/ 3,
-                                         p2.y*2/3 + p3.y/ 3,
-                                         p2.z*2/3 + p3.z/3));
+            Points.push_back(Vector3D::point(p2.x * 2 / 3 + p3.x / 3,
+                                             p2.y * 2 / 3 + p3.y / 3,
+                                             p2.z * 2 / 3 + p3.z / 3));
 
-        Points.push_back(Vector3D::point(p2.x*2/3 + p3.x/ 3+p2.x*2/3 + p3.x/ 3-p2.x,
-                                         p2.y*2/3 + p3.y/ 3+p2.y*2/3 + p3.y/ 3-p2.y,
-                                         p2.z*2/3 + p3.z/3+p2.z*2/3 + p3.z/ 3-p2.z));
+            Points.push_back(Vector3D::point(p2.x * 2 / 3 + p3.x / 3 + p2.x * 2 / 3 + p3.x / 3 - p2.x,
+                                             p2.y * 2 / 3 + p3.y / 3 + p2.y * 2 / 3 + p3.y / 3 - p2.y,
+                                             p2.z * 2 / 3 + p3.z / 3 + p2.z * 2 / 3 + p3.z / 3 - p2.z));
 
-        Points.push_back(Vector3D::point(p3.x*2/3 + p1.x/ 3,
-                                         p3.y*2/3 + p1.y/ 3,
-                                         p3.z*2/3 + p1.z/3));
+            Points.push_back(Vector3D::point(p3.x * 2 / 3 + p1.x / 3,
+                                             p3.y * 2 / 3 + p1.y / 3,
+                                             p3.z * 2 / 3 + p1.z / 3));
 
-        Points.push_back(Vector3D::point(p3.x*2/3 + p1.x/ 3+p3.x*2/3 + p1.x/ 3-p3.x,
-                                         p3.y*2/3 + p1.y/ 3+p3.y*2/3 + p1.y/ 3-p3.y,
-                                         p3.z*2/3 + p1.z/3+p3.z*2/3 + p1.z/ 3-p3.z));
+            Points.push_back(Vector3D::point(p3.x * 2 / 3 + p1.x / 3 + p3.x * 2 / 3 + p1.x / 3 - p3.x,
+                                             p3.y * 2 / 3 + p1.y / 3 + p3.y * 2 / 3 + p1.y / 3 - p3.y,
+                                             p3.z * 2 / 3 + p1.z / 3 + p3.z * 2 / 3 + p1.z / 3 - p3.z));
 
-        int size = Points.size();
-        /*faces.push_back(Face({tria.point_indexes[0],size-6,size-1}));
-        faces.push_back(Face({tria.point_indexes[1],size-4,size-5}));
-        faces.push_back(Face({tria.point_indexes[2],size-2,size-3}));*/
-        Faces.push_back(Face({size - 6, size - 5,  size - 4, size - 3, size - 2,  size - 1}));
-    }
+            int size = Points.size();
+
+            /*faces.push_back(Face({tria.point_indexes[0],size-6,size-1}));
+            faces.push_back(Face({tria.point_indexes[1],size-4,size-5}));
+            faces.push_back(Face({tria.point_indexes[2],size-2,size-3}));*/
+            Faces.push_back(Face({size - 6, size - 5, size - 4, size - 3, size - 2, size - 1}));
+        }
+    Faces.push_back(Face({ 0, 6, 12, 18, 24}));
+    Faces.push_back(Face({41,8,4,34,33}));
+    Faces.push_back(Face({10,9,45,53,14}));
+    Faces.push_back(Face({16,15,57,65,20}));
+    Faces.push_back(Face({22,21,69,77,26}));
+    Faces.push_back(Face({28,27,81,89,2}));
+    Faces.push_back(Face({44,43,92,91,99}));
+    Faces.push_back(Face({56,55,98,97,105}));
+    Faces.push_back(Face({68,67,104,103,111}));
+    Faces.push_back(Face({80,79,110,109,117}));
+    Faces.push_back(Face({32,31,116,115,93}));
+    Faces.push_back(Face({90,96,102,108,114}));
     return Figure(Points, Faces);
 }
 
@@ -687,6 +708,46 @@ void applyTransformation(Figure &fig, const Matrix &m) {
         point = point * m;
     }
 }
+
+void Figure::applyTransformation(Figure &fig, const Matrix &m) {
+    for (auto &point: fig.points) {
+        point = point * m;
+    }
+}
+
+void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_iterations, const Figure& fig) {
+    Figure F = fig;
+    if (nr_iterations!=0){
+        Matrix Ms = scaleFigure(1.0/3.0);
+        applyTransformation(const_cast<Figure &>(F), Ms);
+        for(auto i = 0.0; i<(double)F.points.size(); i += 0.5) {
+            if (std::fmod(i,1) == 0){
+                Figure Fi = F;
+                Matrix Mt = translate(fig.points[i] - Fi.points[i]);
+                applyTransformation(Fi, Mt);
+                createMengerSponge(conf, fractal, nr_iterations - 1, Fi);
+                }
+            else{
+                Figure Fi = F;
+                Matrix Mt = translate((fig.points[floor(i)]+fig.points[floor(i)+1])/2.0 - (Fi.points[floor(i)]+Fi.points[floor(i)+1])/2/0);
+                applyTransformation(Fi, Mt);
+                createMengerSponge(conf, fractal, nr_iterations - 1, Fi);
+            }
+        }
+    }
+    else{
+        std::vector<double> C = conf["color"];
+        F.color = Mycolor(C[0], C[1], C[2]);
+
+        std::vector<double> center = conf["center"];
+        F.TFM = CreateTransformationMatrix(conf["rotateX"].as_double_or_die()*M_PI/180, conf["rotateY"].as_double_or_die()*M_PI/180, conf["rotateZ"].as_double_or_die()*M_PI/180, conf["scale"], Vector3D::point(center[0], center[1], center[2]));
+
+        fractal.push_back(F);
+        return;
+    }
+}
+
+
 
 L3Dsystem::L3Dsystem(std::string inputfile) {
     LParser::LSystem3D l_system ;
