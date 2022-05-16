@@ -160,6 +160,7 @@ class Triangle{
     Mycolor color;
     Lights3D lights;
 
+
 public:
     Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Mycolor color);
 

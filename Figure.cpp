@@ -13,11 +13,18 @@ void toPolar(const Vector3D &point, double &theta, double &phi, double &r) {
     phi = std::acos(point.z / r);
 }
 
-Matrix EyePointTrans(const Vector3D &point){
+Matrix EyePointTrans(const Vector3D &point, bool clipping = false){
 double theta;
 double phi;
 double r;
-toPolar(point, theta, phi, r);
+if(clipping){
+    phi = point.x;
+    theta = point.y;
+    r = point.z;
+}
+else{
+    toPolar(point, theta, phi, r);
+}
 Matrix ETM = Matrix();
 ETM(1, 1) = -sin(theta);
 ETM(1, 2) = -cos(theta) * cos(phi);
@@ -111,10 +118,10 @@ Figures::Figures(const ini::Configuration &configuration) {
             double phi2;
             double r2;
             std::vector<double> view = configuration["General"]["viewDirection"];
-            Vector3D viewDirection = Vector3D::point(-view[0], -view[1], -view[2]);
+            Vector3D viewDirection = Vector3D::vector(-view[0], -view[1], -view[2]);
             toPolar(viewDirection, theta1, phi1, r1);
             toPolar(Vector3D::point(Eye[0], Eye[1], Eye[2]), theta2, phi2, r2);
-            EyePointMatrix = EyePointTrans(Vector3D::point(phi1, theta1, r2));
+            EyePointMatrix = EyePointTrans(Vector3D::point(phi1, theta1, r2), true);
             dNear = configuration["General"]["dNear"].as_double_or_die();
             dFar = configuration["General"]["dFar"].as_double_or_die();
             right = dNear * tan(configuration["General"]["hfov"].as_double_or_die() / 2);
@@ -213,11 +220,16 @@ img::EasyImage Figures::Draw_3Dtria(const ini::Configuration &configuration) {
                 Point2D p1a = doProjection(p1);
                 Point2D p2a = doProjection(p2);
                 Point2D p3a = doProjection(p3);
-                if(!configuration["General"]["LightedZBuffering"].exists()){
+                if(configuration["General"]["type"].as_string_or_die() != "LightedZBuffering"){
                     Triangle triangle = Triangle(p1, p2, p3, p1a, p2a, p3a, c);
                     Triangles.push_back(triangle);
                 }
-                else{
+                else if(!configuration["Figure0"]["diffuseReflection"].exists()){
+                    Triangle triangle = Triangle(p1, p2, p3, p1a, p2a, p3a, c);
+                    Triangles.push_back(triangle);
+                }
+                else if(!configuration["Figure0"]["specularReflection"].exists()){
+                    Lights3D lights = Lights;
 
                 }
 
@@ -276,7 +288,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     Triangles.push_back(Triangle(p2, p1, i.getC(), i.getColor()));
                 } else if (A < value and B > value and C < value) {
                     p = getP(i.getB(), i.getC(), value, dNear, teller);
-                    Vector3D p1 = p*i.getB()+(1-p)*i.getC();
+                    Vector3D p1 = p*i.getB()+(1.0-p)*i.getC();
                     Triangles.push_back(Triangle(i.getA(), p1, i.getC(), i.getColor()));
                     p = getP(i.getA(), i.getB(), value, dNear, teller);
                     Vector3D p2 = p*i.getA()+(1-p)*i.getB();
@@ -349,6 +361,11 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
         }
         triangles = Triangles;
         teller += 1;
+    }
+    for(auto &i:triangles){
+        i.setAa(doProjection(i.getA(), dNear));
+        i.setBa(doProjection(i.getB(), dNear));
+        i.setCa(doProjection(i.getC(), dNear));
     }
     return triangles;
 }
@@ -460,6 +477,12 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
                     Color.setBlue(Color.getBlue()+(light.ambientLight.getBlue()*ambientref[2]));
                 }
                 color = Color;
+            }
+            else if(!conf["specularReflection"].exists()){
+                std::vector<double> ar = conf["ambientReflection"];
+                std::vector<double> dr = conf["diffuseReflection"];
+                ambientReflection = Mycolor(ar[0], ar[1], ar[2]);
+                diffuseReflection = Mycolor(dr[0], dr[1], dr[2]);
             }
         }
         std::string str = conf["type"].as_string_or_die();

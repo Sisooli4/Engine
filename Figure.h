@@ -60,6 +60,10 @@ class Figures{
     double left;
     double top;
     double bottom;
+    Mycolor ambientReflection;
+    Mycolor diffuseReflection;
+    Mycolor specularReflection;
+    double reflectionCoefficient;
 
 public:
     Figures(const ini::Configuration &configuration);
@@ -119,7 +123,7 @@ public:
 
 void toPolar(const Vector3D &point, double &theta, double &phi, double &r);
 
-Matrix EyePointTrans(const Vector3D &point);
+Matrix EyePointTrans(const Vector3D &point, bool clipping);
 
 void applyTransformation(Figures3D &figs, const Matrix &m);
 
