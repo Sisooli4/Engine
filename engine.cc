@@ -33,6 +33,12 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
         return f.Draw_3Dtria(configuration);
     }
 
+    else if(str == "LightedZBuffering"){
+        Figures f = Figures(configuration);
+
+        return f.Draw_3Dtria(configuration);
+    }
+
     else{
         return img::EasyImage();
     }

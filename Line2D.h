@@ -62,6 +62,42 @@ public:
 };
 
 
+class Light {
+public:
+    //de ambiente licht component
+    Mycolor ambientLight;
+    //de diffuse licht component
+    Mycolor diffuseLight;
+    //de diffuse licht component
+    Mycolor specularLight;
+
+    Light(const Mycolor &ambientLight);
+
+    Light(const Mycolor &ambientLight, const Mycolor &diffuseLight);
+
+    Light(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Mycolor &specularLight);
+};
+
+typedef std::vector<Light> Lights3D;
+
+class InfLight: public Light
+{
+public:
+    //de richting waarin het
+    //licht schijnt
+    Vector3D ldVector;
+
+    InfLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Vector3D &ldVector);
+};
+
+class PointLight: public Light
+{
+public:
+    //de locatie van de puntbron
+    Vector3D location;
+    //de hoek van een spotlicht
+    double spotAngle;
+};
 
 class Line2D {
     Point2D p1;
@@ -122,6 +158,7 @@ class Triangle{
     Point2D Ba;
     Point2D Ca;
     Mycolor color;
+    Lights3D lights;
 
 public:
     Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Mycolor color);

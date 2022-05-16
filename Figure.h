@@ -15,6 +15,7 @@
 #include <map>
 #include <string>
 #include <algorithm>
+#include "Light.h"
 
 class Face{
 public:
@@ -52,6 +53,7 @@ class Figures{
     std::vector<Figure> figures;
     Mycolor BackGroundcolor;
     Matrix EyePointMatrix;
+    Lights3D Lights;
     double dNear;
     double dFar;
     double right;
@@ -73,11 +75,15 @@ public:
 
     Figure();
 
-    Figure(ini::Section conf, Figures3D &figures3D);
+    Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights);
 
     std::vector<Vector3D> points;
     std::vector<Face> faces;
     Mycolor color;
+    Mycolor ambientReflection;
+    Mycolor diffuseReflection;
+    Mycolor specularReflection;
+    double reflectionCoefficient;
     Matrix TFM;
 
     Figure createCube();
@@ -100,7 +106,7 @@ public:
 
     Figure createBuckyBall();
 
-    void createMengerSponge(ini::Section conf, Figures3D& fractal, int nrIterations, const Figure& cube);
+    void createMengerSponge(ini::Section conf, Figures3D& fractal, int nrIterations, const Figure& cube, Mycolor Color);
 
     Figure LS3D(std::string inputfile);
 
@@ -131,7 +137,7 @@ Matrix CreateTransformationMatrix(const double angleX, const double angleY, cons
 
 std::vector<Face> triangulate(const Face& face);
 
-void generateFractal(Figure& fig, Figures3D& fractal, const int nr_iterations, const double scale, ini::Section conf);
+void generateFractal(Figure& fig, Figures3D& fractal, const int nr_iterations, const double scale, ini::Section conf, Mycolor color);
 
 void applyTransformation(Figure &fig, const Matrix &m);
 

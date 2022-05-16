@@ -33,6 +33,18 @@ Point2D::~Point2D() {
 
 Point2D::Point2D() {}
 
+Light::Light(const Mycolor &ambientLight) : ambientLight(ambientLight) {}
+
+Light::Light(const Mycolor &ambientLight, const Mycolor &diffuseLight) : ambientLight(ambientLight),
+                                                                         diffuseLight(diffuseLight) {}
+
+Light::Light(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Mycolor &specularLight) : ambientLight(
+        ambientLight), diffuseLight(diffuseLight), specularLight(specularLight) {}
+
+InfLight::InfLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Vector3D &ldVector) : Light(
+        ambientLight, diffuseLight), ldVector(ldVector) {}
+
+
 const Point2D &Line2D::getP1() const {
     return p1;
 }
@@ -350,6 +362,9 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Vector3D const&A, Vector3D 
     Vector3D u = B-A;
     Vector3D v = C-A;
     Vector3D w = Vector3D::point(u.y*v.z-u.z*v.y, u.z*v.x-u.x*v.z, u.x*v.y-u.y*v.x);
+    Vector3D n = w;
+    n.normalise();
+
     double k = w.x*A.x+w.y*A.y+w.z*A.z;
     double dzdx = w.x/(-d*k);
     double dzdy = w.y/(-d*k);
@@ -489,9 +504,9 @@ img::EasyImage Draw_tria(const ini::Configuration& configuration, std::vector<Tr
 }
 
 Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Point2D &aa, const Point2D &ba,
-                   const Point2D &ca, const Mycolor &c1) : A(a), B(b), C(c), Aa(aa), Ba(ba), Ca(ca), color(c1) {}
+                   const Point2D &ca, const Mycolor &c1) : A(a), B(b), C(c), Aa(aa), Ba(ba), Ca(ca), color(c1), lights({}) {}
 
-Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, Mycolor Color) : A(a), B(b), C(c), color(Color){}
+Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, Mycolor Color) : A(a), B(b), C(c), color(Color), lights({}){}
 
 const Vector3D &Triangle::getA() const {
     return A;

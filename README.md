@@ -7,7 +7,7 @@ X: Niet werkend of niet geïmplementeerd
 
 
 |   | Functionaliteit      | Status |
-|---|---------------------------|---|
+|---|---------------------------|--|
 | 1 | 2D L-systemen             | V |
 |   | Met haakjes               | V |
 |   | Stochastisch              | X |
@@ -24,8 +24,8 @@ X: Niet werkend of niet geïmplementeerd
 |   | Z-buffering (driehoeken)  | V |
 | 6 | 3D fractalen              | V |
 |   | BuckyBall                 | V |
-|   | Mengerspons               | X |
-|   | View Frustum              | X |
+|   | Mengerspons               | V |
+|   | View Frustum              | V |
 | 7 | Ambient licht             | X |
 |   | Diffuus licht (oneindig)  | X |
 |   | Diffuus licht (puntbron)  | X |
