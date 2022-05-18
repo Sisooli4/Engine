@@ -69,6 +69,8 @@ public:
     double getP(Vector3D p1, Vector3D p2, double val, double dNear, int teller);
 
     const Lights3D getLights() const;
+
+    const Matrix &getEyePointMatrix() const;
 };
 
 class Figure {
@@ -106,7 +108,7 @@ public:
 
     Figure createBuckyBall();
 
-    void createMengerSponge(ini::Section conf, Figures3D& fractal, int nrIterations, const Figure& cube, Mycolor Color);
+    void createMengerSponge(ini::Section conf, Figures3D& fractal, int nrIterations, const Figure& cube, Mycolor Color, Light reflex, double reflexcoef);
 
     Figure LS3D(std::string inputfile);
 
@@ -137,7 +139,7 @@ Matrix CreateTransformationMatrix(const double angleX, const double angleY, cons
 
 std::vector<Face> triangulate(const Face& face);
 
-void generateFractal(Figure& fig, Figures3D& fractal, const int nr_iterations, const double scale, ini::Section conf, Mycolor color);
+void generateFractal(Figure& fig, Figures3D& fractal, const int nr_iterations, const double scale, ini::Section conf, Mycolor color, Light l, double reflexcoef);
 
 void applyTransformation(Figure &fig, const Matrix &m);
 

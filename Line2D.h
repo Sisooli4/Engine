@@ -181,6 +181,7 @@ class Triangle{
     Lights3D lights;
     Light reflections;
     double reflectionCoefficient;
+    Matrix EyePointMatrix;
 
 
 public:
@@ -215,6 +216,8 @@ public:
 
     double getReflectionCoefficient() const;
 
+    const Matrix &getEyePointMatrix() const;
+
     void setA(const Vector3D &a);
 
     void setB(const Vector3D &b);
@@ -228,6 +231,10 @@ public:
     void setCa(const Point2D &ca);
 
     void setC1(const Mycolor &c);
+
+    void setEyePointMatrix(const Matrix &eyePointMatrix);
+
+
 
 };
 

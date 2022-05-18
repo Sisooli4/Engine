@@ -261,10 +261,14 @@ img::EasyImage Figures::Draw_3Dtria(const ini::Configuration &configuration) {
                 }
                 else if(!configuration["Figure0"]["diffuseReflection"].exists()){
                     Triangle triangle = Triangle(p1, p2, p3, p1a, p2a, p3a, Lights, i.Reflections);
+                    triangle.setC1(c);
+                    triangle.setEyePointMatrix(EyePointMatrix);
                     Triangles.push_back(triangle);
                 }
                 else if(!configuration["Figure0"]["specularReflection"].exists()){
                     Triangle triangle = Triangle(p1, p2, p3, p1a, p2a, p3a, Lights, i.Reflections, i.ReflectionCoefficient);
+                    triangle.setC1(c);
+                    triangle.setEyePointMatrix(EyePointMatrix);
                     Triangles.push_back(triangle);
                 }
 
@@ -442,6 +446,10 @@ const Lights3D Figures::getLights() const {
     return Lights;
 }
 
+const Matrix &Figures::getEyePointMatrix() const {
+    return EyePointMatrix;
+}
+
 
 Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
     if (conf["type"].as_string_or_die() == "3DLSystem") {
@@ -521,7 +529,8 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
             points = f.points;
             faces = f.faces;
         }
-
+        Reflections = Light();
+        ReflectionCoefficient = -1.0;
         if (lights.empty()){
                 std::vector<double> C = conf["color"];
                 color = Mycolor(C[0], C[1], C[2]);
@@ -562,7 +571,7 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
 
         else if(conf["type"].as_string_or_die() == "MengerSponge"){
             std::vector<Figure> figures;
-            createMengerSponge(conf, figures, conf["nrIterations"], createCube(), color);
+            createMengerSponge(conf, figures, conf["nrIterations"], createCube(), color, Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
 
@@ -570,40 +579,40 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
             Figure f = createTetrahedron();
             std::vector<Figure> figures = {};
 
-            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color);
+            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color, Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
         else if(conf["type"].as_string_or_die() == "FractalCube"){
             Figure f = createCube();
             std::vector<Figure> figures = {};
-            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color);
+            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color, Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
 
         else if(conf["type"].as_string_or_die() == "FractalIcosahedron"){
             Figure f = createIcosahedron();
             std::vector<Figure> figures = {};
-            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color);
+            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color,Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
 
         else if(conf["type"].as_string_or_die() == "FractalOctahedron"){
             Figure f = createOctahedron();
             std::vector<Figure> figures = {};
-            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color);
+            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color,Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
 
         else if(conf["type"].as_string_or_die() == "FractalDodecahedron") {
             Figure f = createDodecahedron();
             std::vector<Figure> figures = {};
-            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color);
+            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color,Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
         else if(conf["type"].as_string_or_die() == "FractalBuckyBall") {
             Figure f = createBuckyBall();
             std::vector<Figure> figures = {};
-            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color);
+            generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color,Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
         else{
@@ -712,9 +721,9 @@ Figure Figure:: createCylinder(const int n, const double h){
         faces.push_back(Face({i, (i+1)%n, (i+n+1)%(2*n),i+n }));
     }
     faces.push_back(Face({n-1,0,n, 2*n-1}));
-    for(int i=1; i<3; i++){
+    for(int i=0; i<2; i++){
         Face f = Face();
-        for(int j=i*n-1;j>-1+(i-1)*n;j--){
+        for(int j=i*n;j<(i+1)*n;j++){
             f.point_indexes.push_back(j);
         }
         faces.push_back(f);
@@ -853,7 +862,7 @@ void Figure::applyTransformation(Figure &fig, const Matrix &m) {
     }
 }
 
-void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_iterations, const Figure& fig, Mycolor Color) {
+void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_iterations, const Figure& fig, Mycolor Color, Light reflex, double reflexcoef) {
     Figure F = fig;
     if (nr_iterations!=0){
         Matrix Ms = scaleFigure(1.0/3.0);
@@ -867,12 +876,7 @@ void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_ite
                         Matrix Mt = translate((fig.points[faces[j].point_indexes[k]]+fig.points[faces[j].point_indexes[k+1]])/2.0 - (Fig.points[faces[j].point_indexes[k]]+Fig.points[faces[j].point_indexes[k+1]])/2.0);
                         applyTransformation(Fig, Mt);
                         teller = 1;
-                        Fig.color = Color;
-
-                        std::vector<double> center = conf["center"];
-                        Fig.TFM = CreateTransformationMatrix(conf["rotateX"].as_double_or_die()*M_PI/180, conf["rotateY"].as_double_or_die()*M_PI/180, conf["rotateZ"].as_double_or_die()*M_PI/180, conf["scale"], Vector3D::point(center[0], center[1], center[2]));
-                        std::cout<<"translatie midden"<<std::endl;
-                        createMengerSponge(conf,fractal,nr_iterations-1,Fig, color);
+                        createMengerSponge(conf,fractal,nr_iterations-1,Fig, color, reflex, reflexcoef);
                     }
                 }
             }
@@ -880,7 +884,7 @@ void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_ite
             Matrix Mt = translate(fig.points[i] - Fi.points[i]);
             std::cout<<"translatie hoek"<<std::endl;
             applyTransformation(Fi, Mt);
-            createMengerSponge(conf, fractal, nr_iterations - 1, Fi, color);
+            createMengerSponge(conf, fractal, nr_iterations - 1, Fi, color, reflex, reflexcoef);
         }
     }
     else{
@@ -889,6 +893,8 @@ void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_ite
         std::vector<double> center = conf["center"];
         F.TFM = CreateTransformationMatrix(conf["rotateX"].as_double_or_die()*M_PI/180, conf["rotateY"].as_double_or_die()*M_PI/180, conf["rotateZ"].as_double_or_die()*M_PI/180, conf["scale"], Vector3D::point(center[0], center[1], center[2]));
 
+        F.Reflections = reflex;
+        F.ReflectionCoefficient = reflexcoef;
         fractal.push_back(F);
         std::cout << fractal.size()<<std::endl;
         return;
@@ -1022,7 +1028,7 @@ std::vector<Face> triangulate(const Face& face){
     return F;
 }
 
-void generateFractal(Figure& fig, Figures3D& fractal, const int nr_iterations, const double scale, ini::Section conf, Mycolor color){
+void generateFractal(Figure& fig, Figures3D& fractal, const int nr_iterations, const double scale, ini::Section conf, Mycolor color, Light reflex, double reflexcoef){
     Figure F = fig;
     if (nr_iterations!=0){
         Matrix Ms = scaleFigure(1/scale);
@@ -1031,7 +1037,7 @@ void generateFractal(Figure& fig, Figures3D& fractal, const int nr_iterations, c
         Figure Fi = F;
         Matrix Mt = translate(fig.points[i] - Fi.points[i]);
         applyTransformation(Fi, Mt);
-        generateFractal(Fi, fractal, nr_iterations - 1, scale, conf, color);
+        generateFractal(Fi, fractal, nr_iterations - 1, scale, conf, color, reflex,reflexcoef);
     }
     }
     else{
@@ -1040,6 +1046,8 @@ void generateFractal(Figure& fig, Figures3D& fractal, const int nr_iterations, c
         std::vector<double> center = conf["center"];
         F.TFM = CreateTransformationMatrix(conf["rotateX"].as_double_or_die()*M_PI/180, conf["rotateY"].as_double_or_die()*M_PI/180, conf["rotateZ"].as_double_or_die()*M_PI/180, conf["scale"], Vector3D::point(center[0], center[1], center[2]));
 
+        F.Reflections = reflex;
+        F.ReflectionCoefficient = reflexcoef;
         fractal.push_back(F);
     }
 }

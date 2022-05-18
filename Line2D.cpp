@@ -372,7 +372,6 @@ img::EasyImage Draw_lines(const ini::Configuration& configuration, std::vector<L
 }
 
 void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d, double dx, double dy){
-    img::Color c = img::Color(lround(triangle.getColor().getRed()*255), lround(triangle.getColor().getGreen()*255), lround(triangle.getColor().getBlue()*255));
     double posInf = std::numeric_limits<double>::infinity();
     double negInf = -std::numeric_limits<double>::infinity();
     Point2D G = Point2D((triangle.getAa().x+triangle.getBa().x+triangle.getCa().x)/3, (triangle.getAa().y+triangle.getBa().y+triangle.getCa().y)/3);
@@ -388,14 +387,19 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
         for (auto* light:triangle.getLights()){
             auto* infLight = dynamic_cast<InfLight*>(light);
             if (infLight != nullptr){
-                Vector3D l = -(infLight->ldVector);
-                double cos = n.x*l.x+n.y*l.y+n.z+n.z;
-                triangle.setC1(Mycolor((triangle.getColor().getRed()+ (light->diffuseLight.getRed() *triangle.getReflections().diffuseLight.getRed()*cos)),
-                                  (triangle.getColor().getGreen()+ (light->diffuseLight.getGreen()*triangle.getReflections().diffuseLight.getGreen()*cos)),
-                                  (triangle.getColor().getBlue()+(light->diffuseLight.getBlue()*triangle.getReflections().diffuseLight.getBlue()*cos))));
-            }
+                Vector3D l = -(infLight->ldVector*triangle.getEyePointMatrix());
+                l.normalise();
+                double cos = n.x*l.x+n.y*l.y+n.z*l.z;
+                if (cos > 0){
+                    triangle.setC1(Mycolor((triangle.getColor().getRed()+ (light->diffuseLight.getRed() *triangle.getReflections().diffuseLight.getRed()*cos)),
+                                           (triangle.getColor().getGreen()+ (light->diffuseLight.getGreen()*triangle.getReflections().diffuseLight.getGreen()*cos)),
+                                           (triangle.getColor().getBlue()+(light->diffuseLight.getBlue()*triangle.getReflections().diffuseLight.getBlue()*cos))));
+
+                }
+                }
         }
     }
+    img::Color c = img::Color(lround(triangle.getColor().getRed()*255), lround(triangle.getColor().getGreen()*255), lround(triangle.getColor().getBlue()*255));
 
 
     double k = w.x*triangle.getA().x+w.y*triangle.getA().y+w.z*triangle.getA().z;
@@ -615,6 +619,14 @@ const Light &Triangle::getReflections() const {
 
 double Triangle::getReflectionCoefficient() const {
     return reflectionCoefficient;
+}
+
+void Triangle::setEyePointMatrix(const Matrix &eyePointMatrix) {
+    EyePointMatrix = eyePointMatrix;
+}
+
+const Matrix &Triangle::getEyePointMatrix() const {
+    return EyePointMatrix;
 }
 
 
