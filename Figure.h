@@ -60,10 +60,6 @@ class Figures{
     double left;
     double top;
     double bottom;
-    Mycolor ambientReflection;
-    Mycolor diffuseReflection;
-    Mycolor specularReflection;
-    double reflectionCoefficient;
 
 public:
     Figures(const ini::Configuration &configuration);
@@ -71,6 +67,8 @@ public:
     img::EasyImage Draw_3Dtria(const ini::Configuration &configuration);
     std::vector<Triangle> clipFigures(std::vector<Triangle> triangles);
     double getP(Vector3D p1, Vector3D p2, double val, double dNear, int teller);
+
+    const Lights3D getLights() const;
 };
 
 class Figure {
@@ -84,10 +82,8 @@ public:
     std::vector<Vector3D> points;
     std::vector<Face> faces;
     Mycolor color;
-    Mycolor ambientReflection;
-    Mycolor diffuseReflection;
-    Mycolor specularReflection;
-    double reflectionCoefficient;
+    Light Reflections;
+    double ReflectionCoefficient;
     Matrix TFM;
 
     Figure createCube();

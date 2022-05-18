@@ -33,16 +33,35 @@ Point2D::~Point2D() {
 
 Point2D::Point2D() {}
 
-Light::Light(const Mycolor &ambientLight) : ambientLight(ambientLight) {}
+Light::Light(const Mycolor &ambientLight) : ambientLight(ambientLight) {
+    diffuseLight = Mycolor(-1,-1,-1);
+    specularLight = Mycolor(-1,-1,-1);
+}
 
 Light::Light(const Mycolor &ambientLight, const Mycolor &diffuseLight) : ambientLight(ambientLight),
-                                                                         diffuseLight(diffuseLight) {}
+                                                                         diffuseLight(diffuseLight) {
+    specularLight = Mycolor(-1,-1,-1);
+}
 
 Light::Light(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Mycolor &specularLight) : ambientLight(
         ambientLight), diffuseLight(diffuseLight), specularLight(specularLight) {}
 
+Light::Light() {}
+
+Light::~Light() {
+
+}
+
 InfLight::InfLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Vector3D &ldVector) : Light(
-        ambientLight, diffuseLight), ldVector(ldVector) {}
+        ambientLight, diffuseLight), ldVector(ldVector) {
+    specularLight = Mycolor(-1,-1,-1);
+}
+
+InfLight::InfLight() {}
+
+const Vector3D &InfLight::getLdVector() const {
+    return ldVector;
+}
 
 
 const Point2D &Line2D::getP1() const {
@@ -352,25 +371,39 @@ img::EasyImage Draw_lines(const ini::Configuration& configuration, std::vector<L
     }
 }
 
-void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Vector3D const&A, Vector3D const&B, Vector3D const&C,Vector3D const& Aa, Vector3D const& Ba,Vector3D const& Ca,
-                     double d, double dx, double dy, const Mycolor& color){
-    img::Color c = img::Color(lround(color.getRed()*255), lround(color.getGreen()*255), lround(color.getBlue()*255));
+void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d, double dx, double dy){
+    img::Color c = img::Color(lround(triangle.getColor().getRed()*255), lround(triangle.getColor().getGreen()*255), lround(triangle.getColor().getBlue()*255));
     double posInf = std::numeric_limits<double>::infinity();
     double negInf = -std::numeric_limits<double>::infinity();
-    Point2D G = Point2D((Aa.x+Ba.x+Ca.x)/3, (Aa.y+Ba.y+Ca.y)/3);
-    double eenOzg = ((1.0/(3*Aa.z)) + (1.0/(3*Ba.z)) + (1.0/(3*Ca.z)));
-    Vector3D u = B-A;
-    Vector3D v = C-A;
+    Point2D G = Point2D((triangle.getAa().x+triangle.getBa().x+triangle.getCa().x)/3, (triangle.getAa().y+triangle.getBa().y+triangle.getCa().y)/3);
+    double eenOzg = ((1.0/(3*triangle.getA().z)) + (1.0/(3*triangle.getB().z)) + (1.0/(3*triangle.getC().z)));
+    Vector3D u = triangle.getB()-triangle.getA();
+    Vector3D v = triangle.getC()-triangle.getA();
     Vector3D w = Vector3D::point(u.y*v.z-u.z*v.y, u.z*v.x-u.x*v.z, u.x*v.y-u.y*v.x);
     Vector3D n = w;
     n.normalise();
 
-    double k = w.x*A.x+w.y*A.y+w.z*A.z;
+
+    if(triangle.getReflections().diffuseLight.getRed() != -1){
+        for (auto* light:triangle.getLights()){
+            auto* infLight = dynamic_cast<InfLight*>(light);
+            if (infLight != nullptr){
+                Vector3D l = -(infLight->ldVector);
+                double cos = n.x*l.x+n.y*l.y+n.z+n.z;
+                triangle.setC1(Mycolor((triangle.getColor().getRed()+ (light->diffuseLight.getRed() *triangle.getReflections().diffuseLight.getRed()*cos)),
+                                  (triangle.getColor().getGreen()+ (light->diffuseLight.getGreen()*triangle.getReflections().diffuseLight.getGreen()*cos)),
+                                  (triangle.getColor().getBlue()+(light->diffuseLight.getBlue()*triangle.getReflections().diffuseLight.getBlue()*cos))));
+            }
+        }
+    }
+
+
+    double k = w.x*triangle.getA().x+w.y*triangle.getA().y+w.z*triangle.getA().z;
     double dzdx = w.x/(-d*k);
     double dzdy = w.y/(-d*k);
 
-    int Ymin = std::min(Aa.y, std::min(Ba.y, Ca.y));
-    int Ymax = std::max(Aa.y, std::max(Ba.y, Ca.y));
+    int Ymin = std::min(triangle.getAa().y, std::min(triangle.getBa().y, triangle.getCa().y));
+    int Ymax = std::max(triangle.getAa().y, std::max(triangle.getBa().y, triangle.getCa().y));
 
     for(int i=Ymin; i<=Ymax; i++){
         double xlab = posInf;
@@ -380,20 +413,20 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Vector3D const&A, Vector3D 
         double xrbc = negInf;
         double xrac = negInf;
 
-        if((i-Aa.y)*(i-Ba.y) <= 0 and Aa.y != Ba.y){
-            double xi = Ba.x + (Aa.x-Ba.x)*(i-Ba.y)/(Aa.y-Ba.y);
+        if((i-triangle.getAa().y)*(i-triangle.getBa().y) <= 0 and triangle.getAa().y != triangle.getBa().y){
+            double xi = triangle.getBa().x + (triangle.getAa().x-triangle.getBa().x)*(i-triangle.getBa().y)/(triangle.getAa().y-triangle.getBa().y);
             xlab = xi;
             xrab = xi;
         }
 
-        if((i-Ba.y)*(i-Ca.y) <= 0 and Ba.y != Ca.y){
-            double xi = Ca.x + (Ba.x-Ca.x)*(i-Ca.y)/(Ba.y-Ca.y);
+        if((i-triangle.getBa().y)*(i-triangle.getCa().y) <= 0 and triangle.getBa().y != triangle.getCa().y){
+            double xi = triangle.getCa().x + (triangle.getBa().x-triangle.getCa().x)*(i-triangle.getCa().y)/(triangle.getBa().y-triangle.getCa().y);
             xlbc = xi;
             xrbc = xi;
         }
 
-        if((i-Aa.y)*(i-Ca.y) <= 0 and Aa.y != Ca.y){
-            double xi = Ca.x + (Aa.x-Ca.x)*(i-Ca.y)/(Aa.y-Ca.y);
+        if((i-triangle.getAa().y)*(i-triangle.getCa().y) <= 0 and triangle.getAa().y != triangle.getCa().y){
+            double xi = triangle.getCa().x + (triangle.getAa().x-triangle.getCa().x)*(i-triangle.getCa().y)/(triangle.getAa().y-triangle.getCa().y);
             xlac = xi;
             xrac = xi;
         }
@@ -494,19 +527,16 @@ img::EasyImage Draw_tria(const ini::Configuration& configuration, std::vector<Tr
     img::EasyImage image = img::EasyImage (int(lround(imageX)), int(lround(imageY)), img::Color(int(lround(color[0]*255)),
                                                                                                 int(lround(color[1]*255)),int(lround(color[2]*255))));
     ZBuffer ZB = ZBuffer(int(lround(imageX)), int(lround(imageY)));
-    for (auto i:triangles){
-        Vector3D Aa = Vector3D::point(i.getAa().x, i.getAa().y, i.getA().z);
-        Vector3D Ba = Vector3D::point(i.getBa().x, i.getBa().y, i.getB().z);
-        Vector3D Ca = Vector3D::point(i.getCa().x, i.getCa().y, i.getC().z);
-        draw_zbuf_triag(ZB, image, i.getA(),i.getB(),i.getC(), Aa, Ba, Ca, d, dx, dy, i.getColor());
+    for (auto& i:triangles){
+        draw_zbuf_triag(ZB, image, i, d, dx, dy);
     }
     return image;
 }
 
 Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Point2D &aa, const Point2D &ba,
-                   const Point2D &ca, const Mycolor &c1) : A(a), B(b), C(c), Aa(aa), Ba(ba), Ca(ca), color(c1), lights({}) {}
+                   const Point2D &ca, const Mycolor &c1) : A(a), B(b), C(c), Aa(aa), Ba(ba), Ca(ca), color(c1) {}
 
-Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, Mycolor Color) : A(a), B(b), C(c), color(Color), lights({}){}
+Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, Mycolor Color) : A(a), B(b), C(c), color(Color){}
 
 const Vector3D &Triangle::getA() const {
     return A;
@@ -564,7 +594,37 @@ void Triangle::setC1(const Mycolor &c) {
     Triangle::color = c;
 }
 
+Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Point2D &aa, const Point2D &ba,
+                   const Point2D &ca, const Lights3D& lights, const Light &reflections) : A(a), B(b), C(c), Aa(aa),
+                                                                                          Ba(ba), Ca(ca),
+                                                                                          lights(lights),
+                                                                                          reflections(reflections) {}
+
+Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Point2D &aa, const Point2D &ba,
+                   const Point2D &ca, const Lights3D& lights, const Light &reflections, double reflectionCoefficient)
+        : A(a), B(b), C(c), Aa(aa), Ba(ba), Ca(ca), lights(lights), reflections(reflections),
+          reflectionCoefficient(reflectionCoefficient) {}
+
+const Lights3D &Triangle::getLights() const {
+    return lights;
+}
+
+const Light &Triangle::getReflections() const {
+    return reflections;
+}
+
+double Triangle::getReflectionCoefficient() const {
+    return reflectionCoefficient;
+}
 
 
+PointLight::PointLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Vector3D &location) : Light(
+        ambientLight, diffuseLight), location(location) {
+    specularLight = Mycolor(-1,-1,-1);
+}
 
+PointLight::PointLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Mycolor &specularLight,
+                       const Vector3D &location) : Light(ambientLight, diffuseLight, specularLight),
+                                                   location(location) {}
 
+PointLight::PointLight() {}

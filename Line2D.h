@@ -10,6 +10,7 @@
 #include <vector>
 #include "ini_configuration.h"
 #include "vector3d.h"
+#include <memory>
 
 
 
@@ -71,14 +72,19 @@ public:
     //de diffuse licht component
     Mycolor specularLight;
 
+    Light();
+
     Light(const Mycolor &ambientLight);
 
     Light(const Mycolor &ambientLight, const Mycolor &diffuseLight);
 
     Light(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Mycolor &specularLight);
+
+    virtual ~Light();
+
 };
 
-typedef std::vector<Light> Lights3D;
+typedef std::vector<Light*> Lights3D;
 
 class InfLight: public Light
 {
@@ -88,7 +94,12 @@ public:
     Vector3D ldVector;
 
     InfLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Vector3D &ldVector);
+
+    InfLight();
+
+    const Vector3D &getLdVector() const;
 };
+typedef std::vector<InfLight> InfLights3D;
 
 class PointLight: public Light
 {
@@ -97,7 +108,16 @@ public:
     Vector3D location;
     //de hoek van een spotlicht
     double spotAngle;
+
+    PointLight();
+
+    PointLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Vector3D &location);
+
+    PointLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Mycolor &specularLight,
+               const Vector3D &location);
 };
+typedef std::vector<PointLight> PointLights3D;
+
 
 class Line2D {
     Point2D p1;
@@ -159,6 +179,8 @@ class Triangle{
     Point2D Ca;
     Mycolor color;
     Lights3D lights;
+    Light reflections;
+    double reflectionCoefficient;
 
 
 public:
@@ -166,6 +188,12 @@ public:
 
     Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Point2D &aa, const Point2D &ba,
              const Point2D &ca, const Mycolor &color);
+
+    Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Point2D &aa, const Point2D &ba,
+             const Point2D &ca, const Lights3D& lights, const Light &reflections);
+
+    Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Point2D &aa, const Point2D &ba,
+             const Point2D &ca, const Lights3D& lights, const Light &reflections, double reflectionCoefficient);
 
     const Vector3D &getA() const;
 
@@ -180,6 +208,12 @@ public:
     const Point2D &getCa() const;
 
     const Mycolor &getColor() const;
+
+    const Lights3D &getLights() const;
+
+    const Light &getReflections() const;
+
+    double getReflectionCoefficient() const;
 
     void setA(const Vector3D &a);
 
@@ -210,8 +244,7 @@ std::vector<double> Get_Coordinates(std::vector<Triangle>& triangles);
 
 img::EasyImage Draw_tria(const ini::Configuration& configuration, std::vector<Triangle>);
 
-void draw_zbuf_triag(ZBuffer&, img::EasyImage&, Vector3D const& A, Vector3D const& B,Vector3D const& C,Vector3D const& Aa, Vector3D const& Ba,Vector3D const& Ca,
-                     double d, double dx, double dy, const Mycolor& color);
+void draw_zbuf_triag(ZBuffer&, img::EasyImage&, Triangle triangle, double d, double dx, double dy);
 
 
 
