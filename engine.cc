@@ -20,21 +20,33 @@ img::EasyImage generate_image(const ini::Configuration &configuration)
     else if(str == "Wireframe"){
             Figures f = Figures(configuration);
 
+            if (configuration["Figure0"]["type"].as_string_or_die().substr(0,5) == "Thick"){
+                f.generateThickFigures();
+            }
             return f.Draw_3Dlines(configuration);
         }
     else if(str == "ZBufferedWireframe"){
         Figures f = Figures(configuration);
+        if (configuration["Figure0"]["type"].as_string_or_die().substr(0,5) == "Thick"){
+            f.generateThickFigures();
+        }
 
         return f.Draw_3Dlines(configuration);
     }
     else if(str == "ZBuffering"){
         Figures f = Figures(configuration);
+        if (configuration["Figure0"]["type"].as_string_or_die().substr(0,5) == "Thick"){
+            f.generateThickFigures();
+        }
 
         return f.Draw_3Dtria(configuration);
     }
 
     else if(str == "LightedZBuffering"){
         Figures f = Figures(configuration);
+        if (configuration["Figure0"]["type"].as_string_or_die().substr(0,5) == "Thick"){
+            f.generateThickFigures();
+        }
 
         return f.Draw_3Dtria(configuration);
     }

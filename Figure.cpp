@@ -166,9 +166,9 @@ Figures::Figures(const ini::Configuration &configuration) {
                     std::vector<double> location = configuration["Light" + std::to_string(i)]["location"];
                     l->ambientLight = Mycolor(alight[0], alight[1], alight[2]);
                     l->diffuseLight = Mycolor(dlight[0], dlight[1], dlight[2]);
-                    l->location = Vector3D::vector(location[0], location[1], location[2]);
+                    l->location = Vector3D::point(location[0], location[1], location[2]);
                     if(configuration["Light" + std::to_string(i)]["spotAngle"].exists()){
-                        double spotAngle = configuration["Light" + std::to_string(i)]["spotAngle"];
+                        double spotAngle = configuration["Light" + std::to_string(i)]["spotAngle"].as_double_or_die()*M_PI/180;
                         l->spotAngle = spotAngle;
                     }
                     lights.push_back(l);
@@ -183,7 +183,7 @@ Figures::Figures(const ini::Configuration &configuration) {
                 std::vector<double> location = configuration["Light" + std::to_string(i)]["location"];
                 l->ambientLight = Mycolor(alight[0], alight[1], alight[2]);
                 l->diffuseLight = Mycolor(dlight[0], dlight[1], dlight[2]);
-                l->location = Vector3D::vector(location[0], location[1], location[2]);
+                l->location = Vector3D::point(location[0], location[1], location[2]);
                 l->specularLight = Mycolor(slight[0], slight[1], slight[2]);
                 if(configuration["Light" + std::to_string(i)]["spotAngle"].exists()){
                     double spotAngle = configuration["Light" + std::to_string(i)]["spotAngle"];
@@ -450,15 +450,32 @@ const Matrix &Figures::getEyePointMatrix() const {
     return EyePointMatrix;
 }
 
+const std::vector<Figure> &Figures::getFigures() const {
+    return figures;
+}
+
+void Figures::setFigures(const std::vector<Figure> &figures) {
+    Figures::figures = figures;
+}
+
+
 
 Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
-    if (conf["type"].as_string_or_die() == "3DLSystem") {
+    std::string str = conf["type"].as_string_or_die();
+    if(str.substr(0,5) == "Thick"){
+        m = conf["m"];
+        n = conf["n"];
+        r = conf["radius"];
+        str = str.substr(5,str.size());
+    }
+
+    if (str == "3DLSystem") {
         L3Dsystem l3D = L3Dsystem(conf["inputfile"]);
         this->points = l3D.pointz;
         this->faces = l3D.facez;
 
     }
-    else if (conf["type"].as_string_or_die() == "LineDrawing"){
+    else if (str == "LineDrawing"){
     for (int i=0 ; i<conf["nrPoints"].as_int_or_die(); i++){
         std::vector<double> p = conf["point" + std::to_string(i)];
         Vector3D point = Vector3D::point(p[0], p[1], p[2]);
@@ -470,65 +487,66 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
         faces.push_back(f);
     }}
     else{
-        if (conf["type"].as_string_or_die() == "Cube"){
+        if (str == "Cube"){
             Figure f = createCube();
             points = f.points;
             faces = f.faces;
         }
-        else if(conf["type"].as_string_or_die() == "Tetrahedron"){
+        else if(str == "Tetrahedron"){
             Figure f = createTetrahedron();
             points = f.points;
             faces = f.faces;
         }
 
-        else if(conf["type"].as_string_or_die() == "Icosahedron"){
+        else if(str == "Icosahedron"){
 
             Figure f = createIcosahedron();
             points = f.points;
             faces = f.faces;
         }
 
-        else if(conf["type"].as_string_or_die() == "Octahedron"){
+        else if(str == "Octahedron"){
             Figure f = createOctahedron();
             points = f.points;
             faces = f.faces;
         }
 
-        else if(conf["type"].as_string_or_die() == "Dodecahedron"){
+        else if(str == "Dodecahedron"){
             Figure f = createDodecahedron();
             points = f.points;
             faces = f.faces;
         }
 
-        else if(conf["type"].as_string_or_die() == "Cone"){
+        else if(str == "Cone"){
             Figure f = createCone(conf["n"], conf["height"]);
             points = f.points;
             faces = f.faces;
         }
 
-        else if(conf["type"].as_string_or_die() == "Cylinder"){
-            Figure f = createCylinder(conf["n"], conf["height"]);
+        else if(str == "Cylinder"){
+            Figure f = createCylinder(conf["n"], conf["height"], false);
             points = f.points;
             faces = f.faces;
         }
 
-        else if(conf["type"].as_string_or_die() == "Sphere"){
+        else if(str == "Sphere"){
             Figure f = createSphere(conf["n"]);
             points = f.points;
             faces = f.faces;
         }
 
-        else if(conf["type"].as_string_or_die() == "Torus"){
+        else if(str == "Torus"){
             Figure f = createTorus(conf["r"], conf["R"], conf["n"], conf["m"]);
             points = f.points;
             faces = f.faces;
         }
 
-        else if(conf["type"].as_string_or_die() == "BuckyBall"){
+        else if(str == "BuckyBall"){
             Figure f = createBuckyBall();
             points = f.points;
             faces = f.faces;
-        }
+        }}
+
         Reflections = Light();
         ReflectionCoefficient = -1.0;
         if (lights.empty()){
@@ -544,6 +562,7 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
                 Color.setBlue(Color.getBlue()+(light->ambientLight.getBlue()*ambientref[2]));
             }
             color = Color;
+            if(conf["diffuseReflection"].exists()){
             if(!conf["specularReflection"].exists()){
                 std::vector<double> ar = conf["ambientReflection"];
                 std::vector<double> dr = conf["diffuseReflection"];
@@ -557,8 +576,8 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
                 Reflections = Light(Mycolor(ar[0], ar[1], ar[2]), Mycolor(dr[0], dr[1], dr[2]), Mycolor(sr[0], sr[1], sr[2]));
                 ReflectionCoefficient = conf["reflectionCoefficient"];
             }
+            }
         }
-        std::string str = conf["type"].as_string_or_die();
         if(str != "FractalTetrahedron" and str != "FractalCube" and str != "FractalIcosahedron" and str != "FractalOctahedron" and str != "FractalDodecahedron" and str != "FractalBuckyBall" and str != "MengerSponge") {
 
             std::vector<double> center = conf["center"];
@@ -569,47 +588,47 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
             figures3D.push_back(*this);
         }
 
-        else if(conf["type"].as_string_or_die() == "MengerSponge"){
+        else if(str == "MengerSponge"){
             std::vector<Figure> figures;
             createMengerSponge(conf, figures, conf["nrIterations"], createCube(), color, Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
 
-        else if(conf["type"].as_string_or_die() == "FractalTetrahedron"){
+        else if(str == "FractalTetrahedron"){
             Figure f = createTetrahedron();
             std::vector<Figure> figures = {};
 
             generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color, Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
-        else if(conf["type"].as_string_or_die() == "FractalCube"){
+        else if(str == "FractalCube"){
             Figure f = createCube();
             std::vector<Figure> figures = {};
             generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color, Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
 
-        else if(conf["type"].as_string_or_die() == "FractalIcosahedron"){
+        else if(str == "FractalIcosahedron"){
             Figure f = createIcosahedron();
             std::vector<Figure> figures = {};
             generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color,Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
 
-        else if(conf["type"].as_string_or_die() == "FractalOctahedron"){
+        else if(str == "FractalOctahedron"){
             Figure f = createOctahedron();
             std::vector<Figure> figures = {};
             generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color,Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
 
-        else if(conf["type"].as_string_or_die() == "FractalDodecahedron") {
+        else if(str == "FractalDodecahedron") {
             Figure f = createDodecahedron();
             std::vector<Figure> figures = {};
             generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color,Reflections, ReflectionCoefficient);
             figures3D = figures;
         }
-        else if(conf["type"].as_string_or_die() == "FractalBuckyBall") {
+        else if(str == "FractalBuckyBall") {
             Figure f = createBuckyBall();
             std::vector<Figure> figures = {};
             generateFractal(f, figures, conf["nrIterations"].as_int_or_die(), conf["fractalScale"].as_double_or_die(), conf, color,Reflections, ReflectionCoefficient);
@@ -620,8 +639,6 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
             figures3D.push_back(f);
         }
     }
-
-}
 
 Figure::Figure(const std::vector<Vector3D> &points, const std::vector<Face> &faces) : points(points), faces(faces) {}
 
@@ -710,7 +727,7 @@ Figure Figure:: createCone(const int n, const double h){
     return Figure(points,faces);
 }
 
-Figure Figure:: createCylinder(const int n, const double h){
+Figure Figure:: createCylinder(const int n, const double h, bool thick){
     for (int i=0; i<n; i++){
         points.push_back(Vector3D::point(cos(2*i*M_PI/n), sin(2*i*M_PI/n), 0));
     }
@@ -721,15 +738,15 @@ Figure Figure:: createCylinder(const int n, const double h){
         faces.push_back(Face({i, (i+1)%n, (i+n+1)%(2*n),i+n }));
     }
     faces.push_back(Face({n-1,0,n, 2*n-1}));
-    for(int i=0; i<2; i++){
-        Face f = Face();
-        for(int j=i*n;j<(i+1)*n;j++){
-            f.point_indexes.push_back(j);
+    if(!thick){
+        for(int i=0; i<2; i++){
+            Face f = Face();
+            for(int j=i*n;j<(i+1)*n;j++){
+                f.point_indexes.push_back(j);
+            }
+            faces.push_back(f);
         }
-        faces.push_back(f);
     }
-
-
     return Figure(points,faces);
 }
 
@@ -866,7 +883,7 @@ void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_ite
     Figure F = fig;
     if (nr_iterations!=0){
         Matrix Ms = scaleFigure(1.0/3.0);
-        applyTransformation(const_cast<Figure &>(F), Ms);
+        applyTransformation(F, Ms);
         int teller = 0;
         for(auto i = 0; i<(double)F.points.size(); i ++) {
             if (teller == 0){
@@ -899,6 +916,69 @@ void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_ite
         std::cout << fractal.size()<<std::endl;
         return;
     }
+}
+
+
+
+void Figures::generateThickFigures() {
+    std::vector<Figure> figs;
+    Figures3D resultingFigures;
+    for (auto &i: figures){
+        i.generateThickFigure(resultingFigures);
+        for (auto& fa:resultingFigures){
+            figs.push_back(fa);
+        }
+    }
+    figures = figs;
+}
+
+void Figure::generateThickFigure(Figures3D &resultingFigures) {
+    for(auto& point:points){
+        Figure fig;
+        fig.createSphere(m);
+        Figure f = fig;
+        Matrix Ms = scaleFigure(r);
+        applyTransformation(f,Ms);
+        Matrix Mt = translate(Vector3D::vector(point.x, point.y, point.z));
+        applyTransformation(f,Mt);
+        f.color = color;
+        resultingFigures.push_back(f);
+    }
+    for(auto& i:faces){
+        for (int j=0; j<i.point_indexes.size()-1; j++){
+            Figure fig;
+            fig.createCylinder(n, (points[i.point_indexes[j+1]] - points[i.point_indexes[j]]).length()/r, true);
+            Matrix Ms = scaleFigure(r);
+            applyTransformation(fig,Ms);
+            Vector3D Pr = points[i.point_indexes[j+1]]-points[i.point_indexes[j]];
+            double phi;
+            double theta;
+            double r;
+            toPolar(Pr, theta, phi, r);
+            Matrix Y = rotateY(phi);
+            Matrix Z = rotateZ(theta);
+            Matrix Mt = translate(points[i.point_indexes[j]]);
+            applyTransformation(fig, Y*Z*Mt);
+            fig.color = color;
+            resultingFigures.push_back(fig);
+        }
+        Figure fig;
+        fig.createCylinder(n, (points[i.point_indexes[0]] - points[i.point_indexes[i.point_indexes.size()-1]]).length()/r, true);
+        Matrix Ms = scaleFigure(r);
+        applyTransformation(fig,Ms);
+        Vector3D Pr = points[i.point_indexes[0]]-points[i.point_indexes[i.point_indexes.size()-1]];
+        double phi;
+        double theta;
+        double r;
+        toPolar(Pr, theta, phi, r);
+        Matrix Y = rotateY(phi);
+        Matrix Z = rotateZ(theta);
+        Matrix Mt = translate(points[i.point_indexes[i.point_indexes.size()-1]]);
+        applyTransformation(fig, Y*Z*Mt);
+        fig.color = color;
+        resultingFigures.push_back(fig);
+        }
+
 }
 
 

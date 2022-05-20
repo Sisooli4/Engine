@@ -4,9 +4,9 @@
 
 #include "Line2D.h"
 #include <limits>
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 #include <iostream>
 
 Point2D::Point2D(double x, double y) : x(x), y(y) {}
@@ -125,7 +125,15 @@ Line2D::Line2D(const Point2D &p1, const Point2D &p2, const Mycolor &color) : p1(
 
 
 Mycolor::Mycolor(double red, double green, double blue) : red(red), green(green), blue(blue) {
-
+    if(red>1){
+        red = 1;
+    }
+    if(green>1){
+        green = 1;
+    }
+    if(blue>1){
+        blue = 1;
+    }
 }
 Mycolor::Mycolor():red(0), green(0), blue(0) {}
 
@@ -381,15 +389,15 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
     Vector3D w = Vector3D::point(u.y*v.z-u.z*v.y, u.z*v.x-u.x*v.z, u.x*v.y-u.y*v.x);
     Vector3D n = w;
     n.normalise();
-
-
+    double cos;
+    Vector3D l;
     if(triangle.getReflections().diffuseLight.getRed() != -1){
         for (auto* light:triangle.getLights()){
             auto* infLight = dynamic_cast<InfLight*>(light);
             if (infLight != nullptr){
-                Vector3D l = -(infLight->ldVector*triangle.getEyePointMatrix());
+                l = -(infLight->ldVector*triangle.getEyePointMatrix());
                 l.normalise();
-                double cos = n.x*l.x+n.y*l.y+n.z*l.z;
+                cos = n.dot(l);
                 if (cos > 0){
                     triangle.setC1(Mycolor((triangle.getColor().getRed()+ (light->diffuseLight.getRed() *triangle.getReflections().diffuseLight.getRed()*cos)),
                                            (triangle.getColor().getGreen()+ (light->diffuseLight.getGreen()*triangle.getReflections().diffuseLight.getGreen()*cos)),
@@ -409,43 +417,131 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
     int Ymin = std::min(triangle.getAa().y, std::min(triangle.getBa().y, triangle.getCa().y));
     int Ymax = std::max(triangle.getAa().y, std::max(triangle.getBa().y, triangle.getCa().y));
 
-    for(int i=Ymin; i<=Ymax; i++){
+    for(int i=Ymin; i<=Ymax; i++) {
         double xlab = posInf;
         double xlbc = posInf;
         double xlac = posInf;
         double xrab = negInf;
         double xrbc = negInf;
         double xrac = negInf;
+        Mycolor co = Mycolor(-1,-1,-1);
+        Mycolor col = Mycolor(-1,-1,-1);
 
-        if((i-triangle.getAa().y)*(i-triangle.getBa().y) <= 0 and triangle.getAa().y != triangle.getBa().y){
-            double xi = triangle.getBa().x + (triangle.getAa().x-triangle.getBa().x)*(i-triangle.getBa().y)/(triangle.getAa().y-triangle.getBa().y);
+        if ((i - triangle.getAa().y) * (i - triangle.getBa().y) <= 0 and triangle.getAa().y != triangle.getBa().y) {
+            double xi = triangle.getBa().x + (triangle.getAa().x - triangle.getBa().x) * (i - triangle.getBa().y) /
+                                             (triangle.getAa().y - triangle.getBa().y);
             xlab = xi;
             xrab = xi;
         }
 
-        if((i-triangle.getBa().y)*(i-triangle.getCa().y) <= 0 and triangle.getBa().y != triangle.getCa().y){
-            double xi = triangle.getCa().x + (triangle.getBa().x-triangle.getCa().x)*(i-triangle.getCa().y)/(triangle.getBa().y-triangle.getCa().y);
+        if ((i - triangle.getBa().y) * (i - triangle.getCa().y) <= 0 and triangle.getBa().y != triangle.getCa().y) {
+            double xi = triangle.getCa().x + (triangle.getBa().x - triangle.getCa().x) * (i - triangle.getCa().y) /
+                                             (triangle.getBa().y - triangle.getCa().y);
             xlbc = xi;
             xrbc = xi;
         }
 
-        if((i-triangle.getAa().y)*(i-triangle.getCa().y) <= 0 and triangle.getAa().y != triangle.getCa().y){
-            double xi = triangle.getCa().x + (triangle.getAa().x-triangle.getCa().x)*(i-triangle.getCa().y)/(triangle.getAa().y-triangle.getCa().y);
+        if ((i - triangle.getAa().y) * (i - triangle.getCa().y) <= 0 and triangle.getAa().y != triangle.getCa().y) {
+            double xi = triangle.getCa().x + (triangle.getAa().x - triangle.getCa().x) * (i - triangle.getCa().y) /
+                                             (triangle.getAa().y - triangle.getCa().y);
             xlac = xi;
             xrac = xi;
         }
 
-        if(xlab == xlac and xlac == xlbc and xrab == xrac and xrac == xrbc){
+        if (xlab == xlac and xlac == xlbc and xrab == xrac and xrac == xrbc) {
             continue;
-        }
-        else{
-            int xl = lround(std::min(xlab, std::min(xlbc, xlac))+0.5);
-            int xr = lround(std::max(xrab, std::max(xrbc, xrac))-0.5);
-            for(int j=xl; j<=xr; j++){
-                double eenOverZ = 1.0001*eenOzg+(j-G.x)*dzdx+(i-G.y)*dzdy;
-                if(eenOverZ<Z.zbuffer[j][i]){
+        } else {
+            int xl = lround(std::min(xlab, std::min(xlbc, xlac)) + 0.5);
+            int xr = lround(std::max(xrab, std::max(xrbc, xrac)) - 0.5);
+            for (int j = xl; j <= xr; j++) {
+                double eenOverZ = 1.0001 * eenOzg + (j - G.x) * dzdx + (i - G.y) * dzdy;
+                if (eenOverZ < Z.zbuffer[j][i]) {
+                    if (triangle.getReflections().diffuseLight.getRed() != -1) {
+                        for (auto *light: triangle.getLights()) {
+                            auto *pointLight = dynamic_cast<PointLight *>(light);
+                            if (pointLight != nullptr) {
+                                double z = 1/eenOverZ;
+                                double x = -z*(j-dx)/d;
+                                double y = -z*(i-dy)/d;
+                                //std::cout<<triangle.getEyePointMatrix()<<std::endl;
+                                //std::cout<<pointLight->location* triangle.getEyePointMatrix()<<std::endl;
+                                l = pointLight->location * triangle.getEyePointMatrix() -
+                                    Vector3D::point(x, y, z);
+                                l.normalise();
+                                cos = n.dot(l);
+                                std::cout<<cos<<std::endl;
+                                if (cos > 0) {
+                                    if (pointLight->spotAngle == -1) {
+                                         co = Mycolor((triangle.getColor().getRed() +
+                                                                (light->diffuseLight.getRed() *
+                                                                 triangle.getReflections().diffuseLight.getRed() *
+                                                                 cos)),
+                                                               (triangle.getColor().getGreen() +
+                                                                (light->diffuseLight.getGreen() *
+                                                                 triangle.getReflections().diffuseLight.getGreen() *
+                                                                 cos)),
+                                                               (triangle.getColor().getBlue() +
+                                                                (light->diffuseLight.getBlue() *
+                                                                 triangle.getReflections().diffuseLight.getBlue() *
+                                                                 cos)));
+                                         std::cout<<"print"<<std::endl;
+                                    } else {
+                                        double p = pointLight->spotAngle;
+                                        if (cos > std::cos(p)) {
+                                            co =Mycolor((triangle.getColor().getRed() +
+                                                                    (light->diffuseLight.getRed() *
+                                                                     triangle.getReflections().diffuseLight.getRed() *
+                                                                     (1 - (1 - cos) / (1 - std::cos(p))))),
+                                                                   (triangle.getColor().getGreen() +
+                                                                    (light->diffuseLight.getGreen() *
+                                                                     triangle.getReflections().diffuseLight.getGreen() *
+                                                                     (1 - (1 - cos) / (1 - std::cos(p))))),
+                                                                   (triangle.getColor().getBlue() +
+                                                                    (light->diffuseLight.getBlue() *
+                                                                     triangle.getReflections().diffuseLight.getBlue() *
+                                                                     (1 - (1 - cos) / (1 - std::cos(p))))));
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                        if (triangle.getReflections().specularLight.getRed() != -1) {
+                            for (auto *light: triangle.getLights()) {
+                                auto *infLight = dynamic_cast<InfLight *>(light);
+                                if (infLight != nullptr) {
+                                    Vector3D r = 2 * cos * n - l;
+                                    double cosb;
+                                    if (cos > 0) {
+
+                                        col = Mycolor((triangle.getColor().getRed() +
+                                                                (light->specularLight.getRed() *
+                                                                 triangle.getReflections().specularLight.getRed() *
+                                                                 pow(cosb, triangle.getReflectionCoefficient()))),
+                                                               (triangle.getColor().getGreen() +
+                                                                (light->specularLight.getGreen() *
+                                                                 triangle.getReflections().specularLight.getGreen() *
+                                                                 pow(cosb, triangle.getReflectionCoefficient()))),
+                                                               (triangle.getColor().getBlue() +
+                                                                (light->specularLight.getBlue() *
+                                                                 triangle.getReflections().specularLight.getBlue() *
+                                                                 pow(cosb, triangle.getReflectionCoefficient()))));
+                                    }
+                                }
+                        }
+                    }
                     Z.zbuffer[j][i] = eenOverZ;
-                    (Im)(j, i) = c;
+                        if(col.getRed() != -1){
+                            (Im)(j, i) = img::Color(col.getRed()*255, col.getGreen()*255, col.getBlue()*255);
+                        }
+                        else if(co.getRed() != -1){
+                            (Im)(j, i) = img::Color(co.getRed()*255, co.getGreen()*255, co.getBlue()*255);
+                        }
+                        else{
+                            (Im)(j, i) = c;
+                        }
+
                 }
             }
         }
@@ -633,10 +729,15 @@ const Matrix &Triangle::getEyePointMatrix() const {
 PointLight::PointLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Vector3D &location) : Light(
         ambientLight, diffuseLight), location(location) {
     specularLight = Mycolor(-1,-1,-1);
+    spotAngle = -1;
 }
 
 PointLight::PointLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Mycolor &specularLight,
                        const Vector3D &location) : Light(ambientLight, diffuseLight, specularLight),
-                                                   location(location) {}
+                                                   location(location) {
+    spotAngle = -1;
+}
 
-PointLight::PointLight() {}
+PointLight::PointLight() {
+    spotAngle = -1;
+}

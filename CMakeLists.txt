@@ -25,7 +25,7 @@ set(engine_sources
         Lsystem2D.h
 	l_parser.cc l_parser.h
 	vector3d.cc
-	vector3d.h Figure.cpp Figure.h Light.cpp Light.h)
+	vector3d.h Figure.cpp Figure.h)
 
 ############################################################
 # Create an executable

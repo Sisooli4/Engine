@@ -15,7 +15,6 @@
 #include <map>
 #include <string>
 #include <algorithm>
-#include "Light.h"
 
 class Face{
 public:
@@ -71,6 +70,12 @@ public:
     const Lights3D getLights() const;
 
     const Matrix &getEyePointMatrix() const;
+
+    const std::vector<Figure> &getFigures() const;
+
+    void setFigures(const std::vector<Figure> &figures);
+
+    void generateThickFigures();
 };
 
 class Figure {
@@ -87,6 +92,9 @@ public:
     Light Reflections;
     double ReflectionCoefficient;
     Matrix TFM;
+    int n;
+    int m;
+    double r;
 
     Figure createCube();
 
@@ -100,7 +108,7 @@ public:
 
     Figure createCone(const int n, const double h);
 
-    Figure createCylinder(const int n, const double h);
+    Figure createCylinder(const int n, const double h, bool thick);
 
     Figure createSphere(const int n);
 
@@ -114,7 +122,7 @@ public:
 
     void applyTransformation(Figure &fig, const Matrix &m);
 
-
+    void generateThickFigure(Figures3D &resultingFigures);
 };
 
 
@@ -142,6 +150,8 @@ std::vector<Face> triangulate(const Face& face);
 void generateFractal(Figure& fig, Figures3D& fractal, const int nr_iterations, const double scale, ini::Section conf, Mycolor color, Light l, double reflexcoef);
 
 void applyTransformation(Figure &fig, const Matrix &m);
+
+
 
 
 #endif //ENGINE_FIGURE_H
