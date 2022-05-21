@@ -124,15 +124,24 @@ void Line2D::setColor(const Mycolor &color) {
 Line2D::Line2D(const Point2D &p1, const Point2D &p2, const Mycolor &color) : p1(p1), p2(p2), color(color) {}
 
 
-Mycolor::Mycolor(double red, double green, double blue) : red(red), green(green), blue(blue) {
+Mycolor::Mycolor(double red, double green, double blue) {
     if(red>1){
-        red = 1;
+        Mycolor::red = 1;
+    }
+    else{
+        Mycolor::red=red;
     }
     if(green>1){
-        green = 1;
+        Mycolor::green = 1;
+    }
+    else{
+        Mycolor::green = green;
     }
     if(blue>1){
-        blue = 1;
+        Mycolor::blue = 1;
+    }
+    else{
+        Mycolor::blue = blue;
     }
 }
 Mycolor::Mycolor():red(0), green(0), blue(0) {}
@@ -395,7 +404,8 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
         for (auto* light:triangle.getLights()){
             auto* infLight = dynamic_cast<InfLight*>(light);
             if (infLight != nullptr){
-                l = -(infLight->ldVector*triangle.getEyePointMatrix());
+                l = infLight->ldVector*triangle.getEyePointMatrix();
+                l = -l;
                 l.normalise();
                 cos = n.dot(l);
                 if (cos > 0){
@@ -456,50 +466,46 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
             for (int j = xl; j <= xr; j++) {
                 double eenOverZ = 1.0001 * eenOzg + (j - G.x) * dzdx + (i - G.y) * dzdy;
                 if (eenOverZ < Z.zbuffer[j][i]) {
+                    double z = 1 / eenOverZ;
+                    double x = -z * (j - dx) / d;
+                    double y = -z * (i - dy) / d;
                     if (triangle.getReflections().diffuseLight.getRed() != -1) {
                         for (auto *light: triangle.getLights()) {
                             auto *pointLight = dynamic_cast<PointLight *>(light);
                             if (pointLight != nullptr) {
-                                double z = 1/eenOverZ;
-                                double x = -z*(j-dx)/d;
-                                double y = -z*(i-dy)/d;
-                                //std::cout<<triangle.getEyePointMatrix()<<std::endl;
-                                //std::cout<<pointLight->location* triangle.getEyePointMatrix()<<std::endl;
                                 l = pointLight->location * triangle.getEyePointMatrix() -
                                     Vector3D::point(x, y, z);
                                 l.normalise();
                                 cos = n.dot(l);
-                                std::cout<<cos<<std::endl;
                                 if (cos > 0) {
                                     if (pointLight->spotAngle == -1) {
-                                         co = Mycolor((triangle.getColor().getRed() +
-                                                                (light->diffuseLight.getRed() *
-                                                                 triangle.getReflections().diffuseLight.getRed() *
-                                                                 cos)),
-                                                               (triangle.getColor().getGreen() +
-                                                                (light->diffuseLight.getGreen() *
-                                                                 triangle.getReflections().diffuseLight.getGreen() *
-                                                                 cos)),
-                                                               (triangle.getColor().getBlue() +
-                                                                (light->diffuseLight.getBlue() *
-                                                                 triangle.getReflections().diffuseLight.getBlue() *
-                                                                 cos)));
-                                         std::cout<<"print"<<std::endl;
+                                        co = Mycolor((triangle.getColor().getRed() +
+                                                      (light->diffuseLight.getRed() *
+                                                       triangle.getReflections().diffuseLight.getRed() *
+                                                       cos)),
+                                                     (triangle.getColor().getGreen() +
+                                                      (light->diffuseLight.getGreen() *
+                                                       triangle.getReflections().diffuseLight.getGreen() *
+                                                       cos)),
+                                                     (triangle.getColor().getBlue() +
+                                                      (light->diffuseLight.getBlue() *
+                                                       triangle.getReflections().diffuseLight.getBlue() *
+                                                       cos)));
                                     } else {
                                         double p = pointLight->spotAngle;
                                         if (cos > std::cos(p)) {
-                                            co =Mycolor((triangle.getColor().getRed() +
-                                                                    (light->diffuseLight.getRed() *
-                                                                     triangle.getReflections().diffuseLight.getRed() *
-                                                                     (1 - (1 - cos) / (1 - std::cos(p))))),
-                                                                   (triangle.getColor().getGreen() +
-                                                                    (light->diffuseLight.getGreen() *
-                                                                     triangle.getReflections().diffuseLight.getGreen() *
-                                                                     (1 - (1 - cos) / (1 - std::cos(p))))),
-                                                                   (triangle.getColor().getBlue() +
-                                                                    (light->diffuseLight.getBlue() *
-                                                                     triangle.getReflections().diffuseLight.getBlue() *
-                                                                     (1 - (1 - cos) / (1 - std::cos(p))))));
+                                            co = Mycolor((triangle.getColor().getRed() +
+                                                          (light->diffuseLight.getRed() *
+                                                           triangle.getReflections().diffuseLight.getRed() *
+                                                           (1 - (1 - cos) / (1 - std::cos(p))))),
+                                                         (triangle.getColor().getGreen() +
+                                                          (light->diffuseLight.getGreen() *
+                                                           triangle.getReflections().diffuseLight.getGreen() *
+                                                           (1 - (1 - cos) / (1 - std::cos(p))))),
+                                                         (triangle.getColor().getBlue() +
+                                                          (light->diffuseLight.getBlue() *
+                                                           triangle.getReflections().diffuseLight.getBlue() *
+                                                           (1 - (1 - cos) / (1 - std::cos(p))))));
 
                                         }
                                     }
@@ -507,35 +513,77 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
                             }
                         }
                     }
-                        if (triangle.getReflections().specularLight.getRed() != -1) {
-                            for (auto *light: triangle.getLights()) {
-                                auto *infLight = dynamic_cast<InfLight *>(light);
-                                if (infLight != nullptr) {
-                                    Vector3D r = 2 * cos * n - l;
-                                    double cosb;
-                                    if (cos > 0) {
-
+                    if (triangle.getReflections().specularLight.getRed() != -1) {
+                        for (auto *light: triangle.getLights()) {
+                            auto *infLight = dynamic_cast<InfLight *>(light);
+                            if (infLight != nullptr) {
+                                Vector3D r = 2 * cos * n - l;
+                                r.normalise();
+                                Vector3D cam = - Vector3D::point(x, y, z);
+                                cam.normalise();
+                                double cosb = r.dot(cam);
+                                if (cosb > 0) {
+                                    col = Mycolor((triangle.getColor().getRed() +
+                                                   (light->specularLight.getRed() *
+                                                    triangle.getReflections().specularLight.getRed() *
+                                                    pow(cosb, triangle.getReflectionCoefficient()))),
+                                                  (triangle.getColor().getGreen() +
+                                                   (light->specularLight.getGreen() *
+                                                    triangle.getReflections().specularLight.getGreen() *
+                                                    pow(cosb, triangle.getReflectionCoefficient()))),
+                                                  (triangle.getColor().getBlue() +
+                                                   (light->specularLight.getBlue() *
+                                                    triangle.getReflections().specularLight.getBlue() *
+                                                    pow(cosb, triangle.getReflectionCoefficient()))));
+                                }
+                            }
+                        }
+                        for (auto *light: triangle.getLights()) {
+                            auto *pointLight = dynamic_cast<PointLight *>(light);
+                            if (pointLight != nullptr) {
+                                Vector3D r = 2 * cos * n - l;
+                                r.normalise();
+                                Vector3D cam = Vector3D::point(0, 0, 0) - Vector3D::point(x, y, z);
+                                cam.normalise();
+                                double cosb = r.dot(cam);
+                                if (cosb > 0) {
+                                    if (co.getRed() != -1) {
+                                        col = Mycolor((co.getRed() +
+                                                       (light->specularLight.getRed() *
+                                                        triangle.getReflections().specularLight.getRed() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (co.getGreen() +
+                                                       (light->specularLight.getGreen() *
+                                                        triangle.getReflections().specularLight.getGreen() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (co.getBlue() +
+                                                       (light->specularLight.getBlue() *
+                                                        triangle.getReflections().specularLight.getBlue() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))));
+                                    } else {
                                         col = Mycolor((triangle.getColor().getRed() +
-                                                                (light->specularLight.getRed() *
-                                                                 triangle.getReflections().specularLight.getRed() *
-                                                                 pow(cosb, triangle.getReflectionCoefficient()))),
-                                                               (triangle.getColor().getGreen() +
-                                                                (light->specularLight.getGreen() *
-                                                                 triangle.getReflections().specularLight.getGreen() *
-                                                                 pow(cosb, triangle.getReflectionCoefficient()))),
-                                                               (triangle.getColor().getBlue() +
-                                                                (light->specularLight.getBlue() *
-                                                                 triangle.getReflections().specularLight.getBlue() *
-                                                                 pow(cosb, triangle.getReflectionCoefficient()))));
+                                                       (light->specularLight.getRed() *
+                                                        triangle.getReflections().specularLight.getRed() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (triangle.getColor().getGreen() +
+                                                       (light->specularLight.getGreen() *
+                                                        triangle.getReflections().specularLight.getGreen() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (triangle.getColor().getBlue() +
+                                                       (light->specularLight.getBlue() *
+                                                        triangle.getReflections().specularLight.getBlue() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))));
                                     }
                                 }
+
+                            }
                         }
                     }
                     Z.zbuffer[j][i] = eenOverZ;
-                        if(col.getRed() != -1){
+                        if(col.getRed() != -1 and col.getBlue() != -1 and col.getGreen() != -1){
                             (Im)(j, i) = img::Color(col.getRed()*255, col.getGreen()*255, col.getBlue()*255);
                         }
-                        else if(co.getRed() != -1){
+                        else if(co.getRed() != -1 and co.getBlue() != -1 and co.getGreen() != -1){
                             (Im)(j, i) = img::Color(co.getRed()*255, co.getGreen()*255, co.getBlue()*255);
                         }
                         else{
@@ -602,10 +650,7 @@ img::EasyImage Draw_tria(const ini::Configuration& configuration, std::vector<Tr
     double rangeY = Coordinates[1]-Coordinates[3];
     double imageX = (configuration["General"]["size"].as_double_or_die()*rangeX)/std::max(rangeX,rangeY);
     double imageY = (configuration["General"]["size"].as_double_or_die()*rangeY)/std::max(rangeX,rangeY);
-    std::cout<<"imageX:"<<imageX<<std::endl;
-    std::cout<<"imageY:"<<imageY<<std::endl;
     double d = 0.95*(imageX/rangeX);
-    std::cout<<"d:"<<d<<std::endl;
     for (auto& i:triangles) {
         i.setAa(doProjection(i.getA(), d));
         i.setBa(doProjection(i.getB(), d));
@@ -616,8 +661,6 @@ img::EasyImage Draw_tria(const ini::Configuration& configuration, std::vector<Tr
     double DCY = d*((Coordinates[1]+Coordinates[3])/2);
     double dx = imageX/2 - DCX;
     double dy = imageY/2 - DCY;
-    std::cout<<"dx:"<<dx<<std::endl;
-    std::cout<<"dy:"<<dy<<std::endl;
     for (auto& i:triangles) {
         i.setAa(Point2D(i.getAa().x+dx, i.getAa().y+dy));
         i.setBa(Point2D(i.getBa().x+dx, i.getBa().y+dy));

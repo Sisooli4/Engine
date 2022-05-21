@@ -176,20 +176,35 @@ Figures::Figures(const ini::Configuration &configuration) {
 
             }
             else{
-                auto * l = new PointLight();
-                std::vector<double> alight = configuration["Light" + std::to_string(i)]["ambientLight"];
-                std::vector<double> dlight = configuration["Light" + std::to_string(i)]["diffuseLight"];
-                std::vector<double> slight = configuration["Light" + std::to_string(i)]["specularLight"];
-                std::vector<double> location = configuration["Light" + std::to_string(i)]["location"];
-                l->ambientLight = Mycolor(alight[0], alight[1], alight[2]);
-                l->diffuseLight = Mycolor(dlight[0], dlight[1], dlight[2]);
-                l->location = Vector3D::point(location[0], location[1], location[2]);
-                l->specularLight = Mycolor(slight[0], slight[1], slight[2]);
-                if(configuration["Light" + std::to_string(i)]["spotAngle"].exists()){
-                    double spotAngle = configuration["Light" + std::to_string(i)]["spotAngle"];
-                    l->spotAngle = spotAngle;
+                if(configuration["Light" + std::to_string(i)]["infinity"].as_bool_or_die()){
+                    auto * l = new InfLight();
+                    std::vector<double> alight = configuration["Light" + std::to_string(i)]["ambientLight"];
+                    std::vector<double> dlight = configuration["Light" + std::to_string(i)]["diffuseLight"];
+                    std::vector<double> slight = configuration["Light" + std::to_string(i)]["specularLight"];
+                    std::vector<double> direction = configuration["Light" + std::to_string(i)]["direction"];
+                    l->ambientLight = Mycolor(alight[0], alight[1], alight[2]);
+                    l->diffuseLight = Mycolor(dlight[0], dlight[1], dlight[2]);
+                    l->ldVector = Vector3D::vector(direction[0], direction[1], direction[2]);
+                    l->specularLight = Mycolor(slight[0], slight[1], slight[2]);
+                    lights.push_back(l);
                 }
-                lights.push_back(l);
+                else{
+                    auto * l = new PointLight();
+                    std::vector<double> alight = configuration["Light" + std::to_string(i)]["ambientLight"];
+                    std::vector<double> dlight = configuration["Light" + std::to_string(i)]["diffuseLight"];
+                    std::vector<double> slight = configuration["Light" + std::to_string(i)]["specularLight"];
+                    std::vector<double> location = configuration["Light" + std::to_string(i)]["location"];
+                    l->ambientLight = Mycolor(alight[0], alight[1], alight[2]);
+                    l->diffuseLight = Mycolor(dlight[0], dlight[1], dlight[2]);
+                    l->location = Vector3D::point(location[0], location[1], location[2]);
+                    l->specularLight = Mycolor(slight[0], slight[1], slight[2]);
+                    if(configuration["Light" + std::to_string(i)]["spotAngle"].exists()){
+                        double spotAngle = configuration["Light" + std::to_string(i)]["spotAngle"];
+                        l->spotAngle = spotAngle;
+                    }
+                    lights.push_back(l);
+                }
+
             }
 
         }
@@ -271,6 +286,12 @@ img::EasyImage Figures::Draw_3Dtria(const ini::Configuration &configuration) {
                     triangle.setEyePointMatrix(EyePointMatrix);
                     Triangles.push_back(triangle);
                 }
+                else{
+                    Triangle triangle = Triangle(p1, p2, p3, p1a, p2a, p3a, Lights, i.Reflections, i.ReflectionCoefficient);
+                    triangle.setC1(c);
+                    triangle.setEyePointMatrix(EyePointMatrix);
+                    Triangles.push_back(triangle);
+                }
 
             }
         }
@@ -291,7 +312,6 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
     double C;
     double p;
     for (auto value: edges) {
-        std::cout<<"vlak" + std::to_string(teller)<<std::endl;
         std::vector<Triangle> Triangles = {};
         for (auto& i: triangles) {
             if (teller == 0 or teller == 1){
@@ -312,7 +332,6 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
             if(teller == 0 or teller == 2 or teller == 4) {
                 if (A < value and B < value and C < value) {
                     Triangles.push_back(i);
-                    std::cout<<"3 punten in vlak" << std::endl;
                 } else if (A < value and B < value and C > value) {
                     p = getP(i.getA(), i.getC(), value, dNear, teller);
                     Vector3D p1 = p*i.getA()+(1-p)*i.getC();
@@ -320,7 +339,6 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     p = getP(i.getB(), i.getC(), value, dNear, teller);
                     Vector3D p2 = p*i.getB()+(1-p)*i.getC();
                     Triangles.push_back(Triangle(p1, i.getB(), p2, i.getColor()));
-                    std::cout<<"2 punten in vlak" << std::endl;
                 } else if (A > value and B < value and C < value) {
                     p = getP(i.getA(), i.getB(), value, dNear, teller);
                     Vector3D p1 = p*i.getA()+(1-p)*i.getB();
@@ -328,7 +346,6 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     p = getP(i.getA(), i.getC(), value, dNear, teller);
                     Vector3D p2 = p*i.getA()+(1-p)*i.getC();
                     Triangles.push_back(Triangle(p2, p1, i.getC(), i.getColor()));
-                    std::cout<<"2 punten in vlak" << std::endl;
                 } else if (A < value and B > value and C < value) {
                     p = getP(i.getB(), i.getC(), value, dNear, teller);
                     Vector3D p1 = p*i.getB()+(1.0-p)*i.getC();
@@ -336,34 +353,29 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     p = getP(i.getA(), i.getB(), value, dNear, teller);
                     Vector3D p2 = p*i.getA()+(1-p)*i.getB();
                     Triangles.push_back(Triangle(i.getA(), p2, p1, i.getColor()));
-                    std::cout<<"2 punten in vlak" << std::endl;
                 } else if (A < value and B > value and C > value) {
                     p = getP(i.getA(), i.getB(), value, dNear, teller);
                     Vector3D p1 = p*i.getA()+(1-p)*i.getB();
                     p = getP(i.getA(), i.getC(), value, dNear, teller);
                     Vector3D p2 = p*i.getA()+(1-p)*i.getC();
                     Triangles.push_back(Triangle(i.getA(), p1, p2, i.getColor()));
-                    std::cout<<"1 punten in vlak" << std::endl;
                 } else if (A > value and B < value and C > value) {
                     p = getP(i.getB(), i.getC(), value, dNear, teller);
                     Vector3D p1 = p*i.getB()+(1-p)*i.getC();
                     p = getP(i.getA(), i.getB(), value, dNear, teller);
                     Vector3D p2 = p*i.getA()+(1-p)*i.getB();
                     Triangles.push_back(Triangle(p2, i.getB(), p1, i.getColor()));
-                    std::cout<<"1 punten in vlak" << std::endl;
                 } else if (A > value and B > value and C < value) {
                     p = getP(i.getA(), i.getC(), value, dNear, teller);
                     Vector3D p1 = p*i.getA()+(1-p)*i.getC();
                     p = getP(i.getC(), i.getB(), value, dNear, teller);
                     Vector3D p2 = p*i.getC()+(1-p)*i.getB();
                     Triangles.push_back(Triangle(p1, p2, i.getC(), i.getColor()));
-                    std::cout<<"1 punten in vlak" << std::endl;
                 }
             }
             else{
                 if (A > value and B > value and C > value) {
                     Triangles.push_back(i);
-                    std::cout<<"3 punten in vlak" << std::endl;
                 } else if (A > value and B > value and C < value) {
                     p = getP(i.getA(), i.getC(), value, dNear, teller);
                     Vector3D p1 = p*i.getA()+(1-p)*i.getC();
@@ -371,7 +383,6 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     p = getP(i.getB(), i.getC(), value, dNear, teller);
                     Vector3D p2 = p*i.getB()+(1-p)*i.getC();
                     Triangles.push_back(Triangle(p1, i.getB(), p2, i.getColor()));
-                    std::cout<<"2 punten in vlak" << std::endl;
 
                 } else if (A < value and B > value and C > value) {
                     p = getP(i.getA(), i.getB(), value, dNear, teller);
@@ -380,7 +391,6 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     p = getP(i.getA(), i.getC(), value, dNear, teller);
                     Vector3D p2 = p*i.getA()+(1-p)*i.getC();
                     Triangles.push_back(Triangle(p2, p1, i.getC(), i.getColor()));
-                    std::cout<<"2 punten in vlak" << std::endl;
                 } else if (A > value and B < value and C > value) {
                     p = getP(i.getB(), i.getC(), value, dNear, teller);
                     Vector3D p1 = p*i.getB()+(1-p)*i.getC();
@@ -388,28 +398,24 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     p = getP(i.getA(), i.getB(), value, dNear, teller);
                     Vector3D p2 = p*i.getA()+(1-p)*i.getB();
                     Triangles.push_back(Triangle(i.getA(), p2, p1, i.getColor()));
-                    std::cout<<"2 punten in vlak" << std::endl;
                 } else if (A > value and B < value and C < value) {
                     p = getP(i.getA(), i.getB(), value, dNear, teller);
                     Vector3D p1 = p*i.getA()+(1-p)*i.getB();
                     p = getP(i.getA(), i.getC(), value, dNear, teller);
                     Vector3D p2 = p*i.getA()+(1-p)*i.getC();
                     Triangles.push_back(Triangle(i.getA(), p1, p2, i.getColor()));
-                    std::cout<<"1 punten in vlak" << std::endl;
                 } else if (A < value and B > value and C < value) {
                     p = getP(i.getB(), i.getC(), value, dNear, teller);
                     Vector3D p1 = p*i.getB()+(1-p)*i.getC();
                     p = getP(i.getA(), i.getB(), value, dNear, teller);
                     Vector3D p2 = p*i.getA()+(1-p)*i.getB();
                     Triangles.push_back(Triangle(p2, i.getB(), p1, i.getColor()));
-                    std::cout<<"1 punten in vlak" << std::endl;
                 } else if (A < value and B < value and C > value) {
                     p = getP(i.getA(), i.getC(), value, dNear, teller);
                     Vector3D p1 = p*i.getA()+(1-p)*i.getC();
                     p = getP(i.getC(), i.getB(), value, dNear, teller);
                     Vector3D p2 = p*i.getC()+(1-p)*i.getB();
                     Triangles.push_back(Triangle(p1, p2, i.getC(), i.getColor()));
-                    std::cout<<"1 punten in vlak" << std::endl;
                 }
         }
         }
@@ -420,11 +426,6 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
         i.setAa(doProjection(i.getA()));
         i.setBa(doProjection(i.getB()));
         i.setCa(doProjection(i.getC()));
-    }
-    for(auto i:triangles){
-        std::cout<<"A.x:"+ std::to_string(i.getA().x)<<"  A.y:" + std::to_string(i.getA().y) << "  A.z:" + std::to_string(i.getA().z) << std::endl;
-        std::cout<<"B.x:"+ std::to_string(i.getB().x)<<"  B.y:" + std::to_string(i.getB().y) << "  B.z:" + std::to_string(i.getB().z) << std::endl;
-        std::cout<<"C.x:"+ std::to_string(i.getC().x)<<"  C.y:" + std::to_string(i.getC().y) << "  C.z:" + std::to_string(i.getC().z) << std::endl;
     }
     return triangles;
 }
@@ -899,7 +900,6 @@ void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_ite
             }
             Figure Fi = F;
             Matrix Mt = translate(fig.points[i] - Fi.points[i]);
-            std::cout<<"translatie hoek"<<std::endl;
             applyTransformation(Fi, Mt);
             createMengerSponge(conf, fractal, nr_iterations - 1, Fi, color, reflex, reflexcoef);
         }
@@ -913,7 +913,6 @@ void Figure::createMengerSponge(ini::Section conf,Figures3D& fractal, int nr_ite
         F.Reflections = reflex;
         F.ReflectionCoefficient = reflexcoef;
         fractal.push_back(F);
-        std::cout << fractal.size()<<std::endl;
         return;
     }
 }
