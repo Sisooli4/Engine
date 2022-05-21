@@ -131,7 +131,7 @@ Figures::Figures(const ini::Configuration &configuration) {
             bottom = -top;
         }
     }
-    if(configuration["General"]["type"].as_string_or_die() != "LightedZBuffering"){
+    if(!configuration["General"]["nrLights"].exists()){
         for (auto i=0 ; i<int(configuration["General"]["nrFigures"]); i++){
             Figures3D figures3D = {};
             Figure(configuration["Figure" + std::to_string(i)], figures3D, {});
@@ -925,7 +925,10 @@ void Figures::generateThickFigures() {
     for (auto &i: figures){
         i.generateThickFigure(resultingFigures);
         for (auto& fa:resultingFigures){
+            fa.Reflections = i.Reflections;
+            fa.ReflectionCoefficient = i.ReflectionCoefficient;
             figs.push_back(fa);
+
         }
     }
     figures = figs;
@@ -933,9 +936,8 @@ void Figures::generateThickFigures() {
 
 void Figure::generateThickFigure(Figures3D &resultingFigures) {
     for(auto& point:points){
-        Figure fig;
-        fig.createSphere(m);
-        Figure f = fig;
+        Figure f;
+        f.createSphere(m);
         Matrix Ms = scaleFigure(r);
         applyTransformation(f,Ms);
         Matrix Mt = translate(Vector3D::vector(point.x, point.y, point.z));
@@ -1033,62 +1035,77 @@ Vector3D Point = Vector3D::point(0,0,0);
 std::stack<std::pair<std::vector<Vector3D>, int>> stack;
 p.push_back(Point);
 int last_index = 0;
+int teller = 0;
     for (auto i:DrawString){
         if (alphabet.find(i) != alphabet.end()){
+            if(draw[i]){
+                if(alphabet.find(DrawString[teller+1]) != alphabet.end()){
+                    if(draw[DrawString[teller+1]]){
+                        Point = Point + H;
+                        teller++;
+                        continue;
+                    }
+                }
+            }
             Point = Point + H;
             p.push_back(Point);
+
             if (draw[i]){
                 f.push_back(Face({last_index, int(p.size()-1)}));
             }
             last_index =  int(p.size()-1);
-        }
-        else if (i == '+'){
-            Vector3D H2 = H;
-            H = H*cos(angle)+L* sin(angle);
-            L = -H2* sin(angle) + L* cos(angle);
-        }
-        else if(i == '-'){
-            Vector3D H2 = H;
-            H = H*cos(-angle)+L* sin(-angle);
-            L = -H2* sin(-angle) + L* cos(-angle);
-        }
-        else if(i == '^'){
-            Vector3D H2 = H;
-            H = H*cos(angle)+U* sin(angle);
-            U = -H2* sin(angle) + U* cos(angle);
-        }
-        else if(i == '&'){
-            Vector3D H2 = H;
-            H = H*cos(-angle)+U* sin(-angle);
-            U = -H2* sin(-angle) + U* cos(-angle);
-        }
-        else if(i == '\\'){
-            Vector3D L2 = L;
-            L = L*cos(angle)-U* sin(angle);
-            U = L2* sin(angle) + U* cos(angle);
-        }
-        else if(i == '/'){
-            Vector3D L2 = L;
-            L = L*cos(-angle)-U* sin(-angle);
-            U = L2* sin(-angle) + U* cos(-angle);
-        }
-        else if(i == '|'){
-            H = -H;
-            L = -L;
-        }
-        else if (i == '('){
-            stack.push(std::pair<std::vector<Vector3D>, int >({H,L,U,Point}, last_index));
-        }
+            teller++;
+            }
+        else{
+            if (i == '+'){
+                Vector3D H2 = H;
+                H = H*cos(angle)+L* sin(angle);
+                L = -H2* sin(angle) + L* cos(angle);
+            }
+            else if(i == '-'){
+                Vector3D H2 = H;
+                H = H*cos(-angle)+L* sin(-angle);
+                L = -H2* sin(-angle) + L* cos(-angle);
+            }
+            else if(i == '^'){
+                Vector3D H2 = H;
+                H = H*cos(angle)+U* sin(angle);
+                U = -H2* sin(angle) + U* cos(angle);
+            }
+            else if(i == '&'){
+                Vector3D H2 = H;
+                H = H*cos(-angle)+U* sin(-angle);
+                U = -H2* sin(-angle) + U* cos(-angle);
+            }
+            else if(i == '\\'){
+                Vector3D L2 = L;
+                L = L*cos(angle)-U* sin(angle);
+                U = L2* sin(angle) + U* cos(angle);
+            }
+            else if(i == '/'){
+                Vector3D L2 = L;
+                L = L*cos(-angle)-U* sin(-angle);
+                U = L2* sin(-angle) + U* cos(-angle);
+            }
+            else if(i == '|'){
+                H = -H;
+                L = -L;
+            }
+            else if (i == '('){
+                stack.push(std::pair<std::vector<Vector3D>, int >({H,L,U,Point}, last_index));
+            }
 
-        else if (i == ')'){
-            std::pair<std::vector<Vector3D>,int> top;
-            top = stack.top();
-            stack.pop();
-            H = top.first[0];
-            L = top.first[1];
-            U = top.first[2];
-            Point = top.first[3];
-            last_index = top.second;
+            else if (i == ')'){
+                std::pair<std::vector<Vector3D>,int> top;
+                top = stack.top();
+                stack.pop();
+                H = top.first[0];
+                L = top.first[1];
+                U = top.first[2];
+                Point = top.first[3];
+                last_index = top.second;
+            }
+            teller++;
         }
     }
     return std::pair<std::vector<Vector3D>, std::vector<Face>> (p,f);

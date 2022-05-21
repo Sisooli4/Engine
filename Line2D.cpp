@@ -57,7 +57,11 @@ InfLight::InfLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, con
     specularLight = Mycolor(-1,-1,-1);
 }
 
-InfLight::InfLight() {}
+InfLight::InfLight() {
+    ambientLight = Mycolor(-1,-1,-1);
+    diffuseLight = Mycolor(-1,-1,-1);
+    specularLight = Mycolor(-1,-1,-1);
+}
 
 const Vector3D &InfLight::getLdVector() const {
     return ldVector;
@@ -469,6 +473,7 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
                     double z = 1 / eenOverZ;
                     double x = -z * (j - dx) / d;
                     double y = -z * (i - dy) / d;
+                    int teller = 0;
                     if (triangle.getReflections().diffuseLight.getRed() != -1) {
                         for (auto *light: triangle.getLights()) {
                             auto *pointLight = dynamic_cast<PointLight *>(light);
@@ -479,40 +484,75 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
                                 cos = n.dot(l);
                                 if (cos > 0) {
                                     if (pointLight->spotAngle == -1) {
-                                        co = Mycolor((triangle.getColor().getRed() +
-                                                      (light->diffuseLight.getRed() *
-                                                       triangle.getReflections().diffuseLight.getRed() *
-                                                       cos)),
-                                                     (triangle.getColor().getGreen() +
-                                                      (light->diffuseLight.getGreen() *
-                                                       triangle.getReflections().diffuseLight.getGreen() *
-                                                       cos)),
-                                                     (triangle.getColor().getBlue() +
-                                                      (light->diffuseLight.getBlue() *
-                                                       triangle.getReflections().diffuseLight.getBlue() *
-                                                       cos)));
-                                    } else {
-                                        double p = pointLight->spotAngle;
-                                        if (cos > std::cos(p)) {
+                                        if (teller == 0){
                                             co = Mycolor((triangle.getColor().getRed() +
                                                           (light->diffuseLight.getRed() *
                                                            triangle.getReflections().diffuseLight.getRed() *
-                                                           (1 - (1 - cos) / (1 - std::cos(p))))),
+                                                           cos)),
                                                          (triangle.getColor().getGreen() +
                                                           (light->diffuseLight.getGreen() *
                                                            triangle.getReflections().diffuseLight.getGreen() *
-                                                           (1 - (1 - cos) / (1 - std::cos(p))))),
+                                                           cos)),
                                                          (triangle.getColor().getBlue() +
                                                           (light->diffuseLight.getBlue() *
                                                            triangle.getReflections().diffuseLight.getBlue() *
-                                                           (1 - (1 - cos) / (1 - std::cos(p))))));
+                                                           cos)));
+                                            teller++;
+                                        }
+                                        else{
+                                            co = Mycolor((co.getRed() +
+                                                          (light->diffuseLight.getRed() *
+                                                           triangle.getReflections().diffuseLight.getRed() *
+                                                           cos)),
+                                                         (co.getGreen() +
+                                                          (light->diffuseLight.getGreen() *
+                                                           triangle.getReflections().diffuseLight.getGreen() *
+                                                           cos)),
+                                                         (co.getBlue() +
+                                                          (light->diffuseLight.getBlue() *
+                                                           triangle.getReflections().diffuseLight.getBlue() *
+                                                           cos)));
+                                        }
 
+                                    } else {
+                                        double p = pointLight->spotAngle;
+                                        if (cos > std::cos(p)) {
+                                            if(teller == 0){
+                                                co = Mycolor((triangle.getColor().getRed() +
+                                                              (light->diffuseLight.getRed() *
+                                                               triangle.getReflections().diffuseLight.getRed() *
+                                                               (1 - (1 - cos) / (1 - std::cos(p))))),
+                                                             (triangle.getColor().getGreen() +
+                                                              (light->diffuseLight.getGreen() *
+                                                               triangle.getReflections().diffuseLight.getGreen() *
+                                                               (1 - (1 - cos) / (1 - std::cos(p))))),
+                                                             (triangle.getColor().getBlue() +
+                                                              (light->diffuseLight.getBlue() *
+                                                               triangle.getReflections().diffuseLight.getBlue() *
+                                                               (1 - (1 - cos) / (1 - std::cos(p))))));
+                                                teller++;
+                                            }
+                                            else{
+                                                co = Mycolor((co.getRed() +
+                                                              (light->diffuseLight.getRed() *
+                                                               triangle.getReflections().diffuseLight.getRed() *
+                                                               (1 - (1 - cos) / (1 - std::cos(p))))),
+                                                             (co.getGreen() +
+                                                              (light->diffuseLight.getGreen() *
+                                                               triangle.getReflections().diffuseLight.getGreen() *
+                                                               (1 - (1 - cos) / (1 - std::cos(p))))),
+                                                             (co.getBlue() +
+                                                              (light->diffuseLight.getBlue() *
+                                                               triangle.getReflections().diffuseLight.getBlue() *
+                                                               (1 - (1 - cos) / (1 - std::cos(p))))));
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
+
                     if (triangle.getReflections().specularLight.getRed() != -1) {
                         for (auto *light: triangle.getLights()) {
                             auto *infLight = dynamic_cast<InfLight *>(light);
@@ -523,44 +563,7 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
                                 cam.normalise();
                                 double cosb = r.dot(cam);
                                 if (cosb > 0) {
-                                    col = Mycolor((triangle.getColor().getRed() +
-                                                   (light->specularLight.getRed() *
-                                                    triangle.getReflections().specularLight.getRed() *
-                                                    pow(cosb, triangle.getReflectionCoefficient()))),
-                                                  (triangle.getColor().getGreen() +
-                                                   (light->specularLight.getGreen() *
-                                                    triangle.getReflections().specularLight.getGreen() *
-                                                    pow(cosb, triangle.getReflectionCoefficient()))),
-                                                  (triangle.getColor().getBlue() +
-                                                   (light->specularLight.getBlue() *
-                                                    triangle.getReflections().specularLight.getBlue() *
-                                                    pow(cosb, triangle.getReflectionCoefficient()))));
-                                }
-                            }
-                        }
-                        for (auto *light: triangle.getLights()) {
-                            auto *pointLight = dynamic_cast<PointLight *>(light);
-                            if (pointLight != nullptr) {
-                                Vector3D r = 2 * cos * n - l;
-                                r.normalise();
-                                Vector3D cam = Vector3D::point(0, 0, 0) - Vector3D::point(x, y, z);
-                                cam.normalise();
-                                double cosb = r.dot(cam);
-                                if (cosb > 0) {
-                                    if (co.getRed() != -1) {
-                                        col = Mycolor((co.getRed() +
-                                                       (light->specularLight.getRed() *
-                                                        triangle.getReflections().specularLight.getRed() *
-                                                        pow(cosb, triangle.getReflectionCoefficient()))),
-                                                      (co.getGreen() +
-                                                       (light->specularLight.getGreen() *
-                                                        triangle.getReflections().specularLight.getGreen() *
-                                                        pow(cosb, triangle.getReflectionCoefficient()))),
-                                                      (co.getBlue() +
-                                                       (light->specularLight.getBlue() *
-                                                        triangle.getReflections().specularLight.getBlue() *
-                                                        pow(cosb, triangle.getReflectionCoefficient()))));
-                                    } else {
+                                    if(teller == 0){
                                         col = Mycolor((triangle.getColor().getRed() +
                                                        (light->specularLight.getRed() *
                                                         triangle.getReflections().specularLight.getRed() *
@@ -574,8 +577,91 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
                                                         triangle.getReflections().specularLight.getBlue() *
                                                         pow(cosb, triangle.getReflectionCoefficient()))));
                                     }
+                                    else if(teller == 1){
+                                        col = Mycolor((co.getRed() +
+                                                       (light->specularLight.getRed() *
+                                                        triangle.getReflections().specularLight.getRed() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (co.getGreen() +
+                                                       (light->specularLight.getGreen() *
+                                                        triangle.getReflections().specularLight.getGreen() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (co.getBlue() +
+                                                       (light->specularLight.getBlue() *
+                                                        triangle.getReflections().specularLight.getBlue() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))));
+                                        teller++;
+                                    }
+                                    else{
+                                        col = Mycolor((col.getRed() +
+                                                       (light->specularLight.getRed() *
+                                                        triangle.getReflections().specularLight.getRed() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (col.getGreen() +
+                                                       (light->specularLight.getGreen() *
+                                                        triangle.getReflections().specularLight.getGreen() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (col.getBlue() +
+                                                       (light->specularLight.getBlue() *
+                                                        triangle.getReflections().specularLight.getBlue() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))));
+                                    }
                                 }
-
+                            }
+                        }
+                        for (auto *light: triangle.getLights()) {
+                            auto *pointLight = dynamic_cast<PointLight *>(light);
+                            if (pointLight != nullptr) {
+                                Vector3D r = 2 * cos * n - l;
+                                r.normalise();
+                                Vector3D cam = Vector3D::point(0, 0, 0) - Vector3D::point(x, y, z);
+                                cam.normalise();
+                                double cosb = r.dot(cam);
+                                if (cosb > 0) {
+                                    if(teller == 0){
+                                        col = Mycolor((triangle.getColor().getRed() +
+                                                       (light->specularLight.getRed() *
+                                                        triangle.getReflections().specularLight.getRed() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (triangle.getColor().getGreen() +
+                                                       (light->specularLight.getGreen() *
+                                                        triangle.getReflections().specularLight.getGreen() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (triangle.getColor().getBlue() +
+                                                       (light->specularLight.getBlue() *
+                                                        triangle.getReflections().specularLight.getBlue() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))));
+                                    }
+                                    else if(teller == 1){
+                                        col = Mycolor((co.getRed() +
+                                                       (light->specularLight.getRed() *
+                                                        triangle.getReflections().specularLight.getRed() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (co.getGreen() +
+                                                       (light->specularLight.getGreen() *
+                                                        triangle.getReflections().specularLight.getGreen() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (co.getBlue() +
+                                                       (light->specularLight.getBlue() *
+                                                        triangle.getReflections().specularLight.getBlue() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))));
+                                        teller++;
+                                    }
+                                    else{
+                                        col = Mycolor((col.getRed() +
+                                                       (light->specularLight.getRed() *
+                                                        triangle.getReflections().specularLight.getRed() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (col.getGreen() +
+                                                       (light->specularLight.getGreen() *
+                                                        triangle.getReflections().specularLight.getGreen() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))),
+                                                      (col.getBlue() +
+                                                       (light->specularLight.getBlue() *
+                                                        triangle.getReflections().specularLight.getBlue() *
+                                                        pow(cosb, triangle.getReflectionCoefficient()))));
+                                    }
+                                }
                             }
                         }
                     }
@@ -783,4 +869,7 @@ PointLight::PointLight(const Mycolor &ambientLight, const Mycolor &diffuseLight,
 
 PointLight::PointLight() {
     spotAngle = -1;
+    specularLight = Mycolor(-1,-1,-1);
+    ambientLight = Mycolor(-1,-1,-1);
+    diffuseLight = Mycolor(-1,-1,-1);
 }
