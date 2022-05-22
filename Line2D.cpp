@@ -688,7 +688,7 @@ std::vector<double> Get_Coordinates(std::vector<Triangle> &triangles) {
     double SmallY = triangles[0].getAa().getY();
 
 
-    for (auto i:triangles){
+    for (auto& i:triangles){
         if (i.getAa().getX() > BigX){
             BigX = i.getAa().getX();
         }
@@ -705,7 +705,7 @@ std::vector<double> Get_Coordinates(std::vector<Triangle> &triangles) {
             BigX = i.getCa().getX();
         }
         else if(i.getCa().getX() < SmallX){
-            SmallX = i.getBa().getX();
+            SmallX = i.getCa().getX();
         }
         if (i.getAa().getY() > BigY){
             BigY = i.getAa().getY();

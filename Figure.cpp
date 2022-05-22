@@ -305,6 +305,8 @@ img::EasyImage Figures::Draw_3Dtria(const ini::Configuration &configuration) {
 }
 
 std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
+
+    Matrix eye = triangles[0].getEyePointMatrix();
     std::vector<double> edges = {-dNear, -dFar, right, left, top, bottom};
     int teller = 0;
     double A;
@@ -426,7 +428,16 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
         i.setAa(doProjection(i.getA()));
         i.setBa(doProjection(i.getB()));
         i.setCa(doProjection(i.getC()));
+        i.setEyePointMatrix(eye);
     }
+
+    for(auto& i:triangles){
+        std::cout<<"A.x = "<<doProjection(i.getA()).x<<"  A.y = "<<doProjection(i.getA()).y<<"  A.z = "<<i.getA().z<<std::endl;
+        std::cout<<"B.x = "<<doProjection(i.getB()).x<<"  B.y = "<<doProjection(i.getB()).y<<"  B.z = "<<i.getB().z<<std::endl;
+        std::cout<<"C.x = "<<doProjection(i.getC()).x<<"  C.y = "<<doProjection(i.getC()).y<<"  C.z = "<<i.getC().z<<std::endl;
+        std::cout<<std::endl;
+    }
+
     return triangles;
 }
 
@@ -468,6 +479,7 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
         n = conf["n"];
         r = conf["radius"];
         str = str.substr(5,str.size());
+        thick = true;
     }
 
     if (str == "3DLSystem") {
@@ -561,6 +573,8 @@ Figure::Figure(ini::Section conf, Figures3D &figures3D, Lights3D lights = {}) {
                 Color.setRed(Color.getRed()+(light->ambientLight.getRed()*ambientref[0]));
                 Color.setGreen(Color.getGreen()+(light->ambientLight.getGreen()*ambientref[1]));
                 Color.setBlue(Color.getBlue()+(light->ambientLight.getBlue()*ambientref[2]));
+                std::vector<double> ar = conf["ambientReflection"];
+                Reflections = Light(Mycolor(ar[0], ar[1], ar[2]));
             }
             color = Color;
             if(conf["diffuseReflection"].exists()){
@@ -923,12 +937,16 @@ void Figures::generateThickFigures() {
     std::vector<Figure> figs;
     Figures3D resultingFigures;
     for (auto &i: figures){
-        i.generateThickFigure(resultingFigures);
-        for (auto& fa:resultingFigures){
-            fa.Reflections = i.Reflections;
-            fa.ReflectionCoefficient = i.ReflectionCoefficient;
-            figs.push_back(fa);
-
+        if(i.thick){
+            i.generateThickFigure(resultingFigures);
+            for (auto& fa:resultingFigures){
+                fa.Reflections = i.Reflections;
+                fa.ReflectionCoefficient = i.ReflectionCoefficient;
+                figs.push_back(fa);
+        }
+        }
+        else{
+            figs.push_back(i);
         }
     }
     figures = figs;
