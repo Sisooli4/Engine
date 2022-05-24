@@ -76,6 +76,8 @@ public:
     void setFigures(const std::vector<Figure> &figures);
 
     void generateThickFigures();
+
+    float roundOff(float value, unsigned char prec);
 };
 
 class Figure {
@@ -95,6 +97,7 @@ public:
     int n;
     int m;
     double r;
+    bool thick = false;
 
     Figure createCube();
 

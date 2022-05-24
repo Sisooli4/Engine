@@ -395,13 +395,22 @@ img::EasyImage Draw_lines(const ini::Configuration& configuration, std::vector<L
 void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d, double dx, double dy){
     double posInf = std::numeric_limits<double>::infinity();
     double negInf = -std::numeric_limits<double>::infinity();
+    bool back = false;
     Point2D G = Point2D((triangle.getAa().x+triangle.getBa().x+triangle.getCa().x)/3, (triangle.getAa().y+triangle.getBa().y+triangle.getCa().y)/3);
     double eenOzg = ((1.0/(3*triangle.getA().z)) + (1.0/(3*triangle.getB().z)) + (1.0/(3*triangle.getC().z)));
     Vector3D u = triangle.getB()-triangle.getA();
     Vector3D v = triangle.getC()-triangle.getA();
     Vector3D w = Vector3D::point(u.y*v.z-u.z*v.y, u.z*v.x-u.x*v.z, u.x*v.y-u.y*v.x);
-    Vector3D n = w;
-    n.normalise();
+    double k = w.x*triangle.getA().x+w.y*triangle.getA().y+w.z*triangle.getA().z;
+    if(triangle.getClipping() and k>0){
+        back = true;
+    }
+
+    Vector3D n = Vector3D::normalise(Vector3D::cross(u,v));
+    if(back){
+        n = -n;
+    }
+
     double cos;
     Vector3D l;
     if(triangle.getReflections().diffuseLight.getRed() != -1){
@@ -424,12 +433,12 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
     img::Color c = img::Color(lround(triangle.getColor().getRed()*255), lround(triangle.getColor().getGreen()*255), lround(triangle.getColor().getBlue()*255));
 
 
-    double k = w.x*triangle.getA().x+w.y*triangle.getA().y+w.z*triangle.getA().z;
+
     double dzdx = w.x/(-d*k);
     double dzdy = w.y/(-d*k);
 
-    int Ymin = std::min(triangle.getAa().y, std::min(triangle.getBa().y, triangle.getCa().y));
-    int Ymax = std::max(triangle.getAa().y, std::max(triangle.getBa().y, triangle.getCa().y));
+    int Ymin = lround(std::min(triangle.getAa().y, std::min(triangle.getBa().y, triangle.getCa().y))+0.5);
+    int Ymax = lround(std::max(triangle.getAa().y, std::max(triangle.getBa().y, triangle.getCa().y))-0.5);
 
     for(int i=Ymin; i<=Ymax; i++) {
         double xlab = posInf;
@@ -470,7 +479,7 @@ void draw_zbuf_triag(ZBuffer& Z, img::EasyImage& Im, Triangle triangle, double d
             for (int j = xl; j <= xr; j++) {
                 double eenOverZ = 1.0001 * eenOzg + (j - G.x) * dzdx + (i - G.y) * dzdy;
                 if (eenOverZ < Z.zbuffer[j][i]) {
-                    double z = 1 / eenOverZ;
+                    double z = 1.0 / eenOverZ;
                     double x = -z * (j - dx) / d;
                     double y = -z * (i - dy) / d;
                     int teller = 0;
@@ -853,6 +862,29 @@ void Triangle::setEyePointMatrix(const Matrix &eyePointMatrix) {
 const Matrix &Triangle::getEyePointMatrix() const {
     return EyePointMatrix;
 }
+
+void Triangle::setClipping(bool clipping) {
+    Triangle::clipping = clipping;
+}
+
+bool Triangle::getClipping() const {
+    return clipping;
+}
+
+Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Lights3D &lights,
+                   const Light &reflections, double reflectionCoefficient) : A(a), B(b), C(c), lights(lights),
+                                                                             reflections(reflections),
+                                                                             reflectionCoefficient(
+                                                                                     reflectionCoefficient) {}
+
+Triangle::Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Mycolor &color,
+                   const Lights3D &lights, const Light &reflections, double reflectionCoefficient) : A(a), B(b), C(c),
+                                                                                                     color(color),
+                                                                                                     lights(lights),
+                                                                                                     reflections(
+                                                                                                             reflections),
+                                                                                                     reflectionCoefficient(
+                                                                                                             reflectionCoefficient) {}
 
 
 PointLight::PointLight(const Mycolor &ambientLight, const Mycolor &diffuseLight, const Vector3D &location) : Light(

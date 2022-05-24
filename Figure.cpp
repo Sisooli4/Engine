@@ -306,6 +306,14 @@ img::EasyImage Figures::Draw_3Dtria(const ini::Configuration &configuration) {
 
 std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
 
+    /*
+    for(auto& i:triangles){
+
+        std::cout<<"A.x = "<<doProjection(i.getA()).x<<"  A.y = "<<doProjection(i.getA()).y<<"  A.z = "<<i.getA().z<<std::endl;
+        std::cout<<"B.x = "<<doProjection(i.getB()).x<<"  B.y = "<<doProjection(i.getB()).y<<"  B.z = "<<i.getB().z<<std::endl;
+        std::cout<<"C.x = "<<doProjection(i.getC()).x<<"  C.y = "<<doProjection(i.getC()).y<<"  C.z = "<<i.getC().z<<std::endl;
+        std::cout<<std::endl;
+    }*/
     Matrix eye = triangles[0].getEyePointMatrix();
     std::vector<double> edges = {-dNear, -dFar, right, left, top, bottom};
     int teller = 0;
@@ -335,89 +343,185 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                 if (A < value and B < value and C < value) {
                     Triangles.push_back(i);
                 } else if (A < value and B < value and C > value) {
-                    p = getP(i.getA(), i.getC(), value, dNear, teller);
-                    Vector3D p1 = p*i.getA()+(1-p)*i.getC();
-                    Triangles.push_back(Triangle(i.getA(), i.getB(), p1, i.getColor()));
-                    p = getP(i.getB(), i.getC(), value, dNear, teller);
-                    Vector3D p2 = p*i.getB()+(1-p)*i.getC();
-                    Triangles.push_back(Triangle(p1, i.getB(), p2, i.getColor()));
+                    Vector3D A1 = i.getC();
+                    Vector3D B1 = i.getA();
+                    Vector3D C1 = i.getB();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor()));
+                    } else{
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
+                    } else if (A < value and B > value and C < value) {
+                    Vector3D A1 = i.getB();
+                    Vector3D B1 = i.getC();
+                    Vector3D C1 = i.getA();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor()));
+                    } else{
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
                 } else if (A > value and B < value and C < value) {
-                    p = getP(i.getA(), i.getB(), value, dNear, teller);
-                    Vector3D p1 = p*i.getA()+(1-p)*i.getB();
-                    Triangles.push_back(Triangle(p1, i.getB(), i.getC(), i.getColor()));
-                    p = getP(i.getA(), i.getC(), value, dNear, teller);
-                    Vector3D p2 = p*i.getA()+(1-p)*i.getC();
-                    Triangles.push_back(Triangle(p2, p1, i.getC(), i.getColor()));
-                } else if (A < value and B > value and C < value) {
-                    p = getP(i.getB(), i.getC(), value, dNear, teller);
-                    Vector3D p1 = p*i.getB()+(1.0-p)*i.getC();
-                    Triangles.push_back(Triangle(i.getA(), p1, i.getC(), i.getColor()));
-                    p = getP(i.getA(), i.getB(), value, dNear, teller);
-                    Vector3D p2 = p*i.getA()+(1-p)*i.getB();
-                    Triangles.push_back(Triangle(i.getA(), p2, p1, i.getColor()));
+                    Vector3D A1 = i.getA();
+                    Vector3D B1 = i.getB();
+                    Vector3D C1 = i.getC();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor()));
+                    } else{
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
                 } else if (A < value and B > value and C > value) {
-                    p = getP(i.getA(), i.getB(), value, dNear, teller);
-                    Vector3D p1 = p*i.getA()+(1-p)*i.getB();
-                    p = getP(i.getA(), i.getC(), value, dNear, teller);
-                    Vector3D p2 = p*i.getA()+(1-p)*i.getC();
-                    Triangles.push_back(Triangle(i.getA(), p1, p2, i.getColor()));
+                    Vector3D A1 = i.getA();
+                    Vector3D B1 = i.getB();
+                    Vector3D C1 = i.getC();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor()));
+                    }
+                    else{
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
                 } else if (A > value and B < value and C > value) {
-                    p = getP(i.getB(), i.getC(), value, dNear, teller);
-                    Vector3D p1 = p*i.getB()+(1-p)*i.getC();
-                    p = getP(i.getA(), i.getB(), value, dNear, teller);
-                    Vector3D p2 = p*i.getA()+(1-p)*i.getB();
-                    Triangles.push_back(Triangle(p2, i.getB(), p1, i.getColor()));
+                    Vector3D A1 = i.getB();
+                    Vector3D B1 = i.getC();
+                    Vector3D C1 = i.getA();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor()));
+                    }
+                    else{
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
                 } else if (A > value and B > value and C < value) {
-                    p = getP(i.getA(), i.getC(), value, dNear, teller);
-                    Vector3D p1 = p*i.getA()+(1-p)*i.getC();
-                    p = getP(i.getC(), i.getB(), value, dNear, teller);
-                    Vector3D p2 = p*i.getC()+(1-p)*i.getB();
-                    Triangles.push_back(Triangle(p1, p2, i.getC(), i.getColor()));
+                    Vector3D A1 = i.getC();
+                    Vector3D B1 = i.getA();
+                    Vector3D C1 = i.getB();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor()));
+                    }
+                    else{
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
                 }
             }
             else{
                 if (A > value and B > value and C > value) {
                     Triangles.push_back(i);
                 } else if (A > value and B > value and C < value) {
-                    p = getP(i.getA(), i.getC(), value, dNear, teller);
-                    Vector3D p1 = p*i.getA()+(1-p)*i.getC();
-                    Triangles.push_back(Triangle(i.getA(), i.getB(), p1, i.getColor()));
-                    p = getP(i.getB(), i.getC(), value, dNear, teller);
-                    Vector3D p2 = p*i.getB()+(1-p)*i.getC();
-                    Triangles.push_back(Triangle(p1, i.getB(), p2, i.getColor()));
+                    Vector3D A1 = i.getC();
+                    Vector3D B1 = i.getA();
+                    Vector3D C1 = i.getB();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor()));
+                    } else{
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
 
-                } else if (A < value and B > value and C > value) {
-                    p = getP(i.getA(), i.getB(), value, dNear, teller);
-                    Vector3D p1 = p*i.getA()+(1-p)*i.getB();
-                    Triangles.push_back(Triangle(p1, i.getB(), i.getC(), i.getColor()));
-                    p = getP(i.getA(), i.getC(), value, dNear, teller);
-                    Vector3D p2 = p*i.getA()+(1-p)*i.getC();
-                    Triangles.push_back(Triangle(p2, p1, i.getC(), i.getColor()));
                 } else if (A > value and B < value and C > value) {
-                    p = getP(i.getB(), i.getC(), value, dNear, teller);
-                    Vector3D p1 = p*i.getB()+(1-p)*i.getC();
-                    Triangles.push_back(Triangle(i.getA(), p1, i.getC(), i.getColor()));
-                    p = getP(i.getA(), i.getB(), value, dNear, teller);
-                    Vector3D p2 = p*i.getA()+(1-p)*i.getB();
-                    Triangles.push_back(Triangle(i.getA(), p2, p1, i.getColor()));
+                    Vector3D A1 = i.getB();
+                    Vector3D B1 = i.getC();
+                    Vector3D C1 = i.getA();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor()));
+                    } else{
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
+                } else if (A < value and B > value and C > value) {
+                    Vector3D A1 = i.getA();
+                    Vector3D B1 = i.getB();
+                    Vector3D C1 = i.getC();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor()));
+                    } else{
+                        Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                        Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
                 } else if (A > value and B < value and C < value) {
-                    p = getP(i.getA(), i.getB(), value, dNear, teller);
-                    Vector3D p1 = p*i.getA()+(1-p)*i.getB();
-                    p = getP(i.getA(), i.getC(), value, dNear, teller);
-                    Vector3D p2 = p*i.getA()+(1-p)*i.getC();
-                    Triangles.push_back(Triangle(i.getA(), p1, p2, i.getColor()));
+                    Vector3D A1 = i.getA();
+                    Vector3D B1 = i.getB();
+                    Vector3D C1 = i.getC();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor()));
+                    }
+                    else{
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
                 } else if (A < value and B > value and C < value) {
-                    p = getP(i.getB(), i.getC(), value, dNear, teller);
-                    Vector3D p1 = p*i.getB()+(1-p)*i.getC();
-                    p = getP(i.getA(), i.getB(), value, dNear, teller);
-                    Vector3D p2 = p*i.getA()+(1-p)*i.getB();
-                    Triangles.push_back(Triangle(p2, i.getB(), p1, i.getColor()));
+                    Vector3D A1 = i.getB();
+                    Vector3D B1 = i.getC();
+                    Vector3D C1 = i.getA();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor()));
+                    }
+                    else{
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
                 } else if (A < value and B < value and C > value) {
-                    p = getP(i.getA(), i.getC(), value, dNear, teller);
-                    Vector3D p1 = p*i.getA()+(1-p)*i.getC();
-                    p = getP(i.getC(), i.getB(), value, dNear, teller);
-                    Vector3D p2 = p*i.getC()+(1-p)*i.getB();
-                    Triangles.push_back(Triangle(p1, p2, i.getC(), i.getColor()));
+                    Vector3D A1 = i.getC();
+                    Vector3D B1 = i.getA();
+                    Vector3D C1 = i.getB();
+                    p = getP(A1, B1, value, dNear, teller);
+                    Vector3D p1 = p*A1+(1-p)*B1;
+                    p = getP(A1, C1, value, dNear, teller);
+                    Vector3D p2 = p*A1+(1-p)*C1;
+                    if(i.getLights().empty()){
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor()));
+                    }
+                    else{
+                        Triangles.push_back(Triangle(A1, p1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
+                    }
                 }
         }
         }
@@ -429,15 +533,16 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
         i.setBa(doProjection(i.getB()));
         i.setCa(doProjection(i.getC()));
         i.setEyePointMatrix(eye);
+        i.setClipping(true);
     }
-
+/*
     for(auto& i:triangles){
         std::cout<<"A.x = "<<doProjection(i.getA()).x<<"  A.y = "<<doProjection(i.getA()).y<<"  A.z = "<<i.getA().z<<std::endl;
         std::cout<<"B.x = "<<doProjection(i.getB()).x<<"  B.y = "<<doProjection(i.getB()).y<<"  B.z = "<<i.getB().z<<std::endl;
         std::cout<<"C.x = "<<doProjection(i.getC()).x<<"  C.y = "<<doProjection(i.getC()).y<<"  C.z = "<<i.getC().z<<std::endl;
         std::cout<<std::endl;
     }
-
+*/
     return triangles;
 }
 
@@ -452,6 +557,7 @@ double Figures::getP(Vector3D p1, Vector3D p2, double val, double dNear, int tel
     else{
         p = (p2.y*dNear+p2.z*val)/((p2.y-p1.y)*dNear+(p2.z-p1.z)*val);
     }
+    return p;
 }
 
 const Lights3D Figures::getLights() const {
@@ -950,6 +1056,11 @@ void Figures::generateThickFigures() {
         }
     }
     figures = figs;
+}
+
+float Figures::roundOff(float value, unsigned char prec) {
+    float pow_10 = pow(10.0f, (float)prec);
+    return round(value * pow_10) / pow_10;
 }
 
 void Figure::generateThickFigure(Figures3D &resultingFigures) {

@@ -182,6 +182,7 @@ class Triangle{
     Light reflections;
     double reflectionCoefficient;
     Matrix EyePointMatrix;
+    bool clipping;
 
 
 public:
@@ -195,6 +196,12 @@ public:
 
     Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Point2D &aa, const Point2D &ba,
              const Point2D &ca, const Lights3D& lights, const Light &reflections, double reflectionCoefficient);
+
+    Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Lights3D &lights, const Light &reflections,
+             double reflectionCoefficient);
+
+    Triangle(const Vector3D &a, const Vector3D &b, const Vector3D &c, const Mycolor &color, const Lights3D &lights,
+             const Light &reflections, double reflectionCoefficient);
 
     const Vector3D &getA() const;
 
@@ -218,6 +225,8 @@ public:
 
     const Matrix &getEyePointMatrix() const;
 
+    bool getClipping() const;
+
     void setA(const Vector3D &a);
 
     void setB(const Vector3D &b);
@@ -234,6 +243,7 @@ public:
 
     void setEyePointMatrix(const Matrix &eyePointMatrix);
 
+    void setClipping(bool clipping);
 
 
 };
