@@ -340,9 +340,9 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                 C = doProjection(i.getC(), dNear).y;
             }
             if(teller == 0 or teller == 2 or teller == 4) {
-                if (A < value and B < value and C < value) {
+                if (A <= value and B <= value and C <= value) {
                     Triangles.push_back(i);
-                } else if (A < value and B < value and C > value) {
+                } else if (A <= value and B <= value and C > value) {
                     Vector3D A1 = i.getC();
                     Vector3D B1 = i.getA();
                     Vector3D C1 = i.getB();
@@ -357,7 +357,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                         Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                         Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                     }
-                    } else if (A < value and B > value and C < value) {
+                    } else if (A <= value and B > value and C <= value) {
                     Vector3D A1 = i.getB();
                     Vector3D B1 = i.getC();
                     Vector3D C1 = i.getA();
@@ -372,7 +372,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                         Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                         Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                     }
-                } else if (A > value and B < value and C < value) {
+                } else if (A > value and B <= value and C <= value) {
                     Vector3D A1 = i.getA();
                     Vector3D B1 = i.getB();
                     Vector3D C1 = i.getC();
@@ -387,7 +387,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                         Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                         Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                     }
-                } else if (A < value and B > value and C > value) {
+                } else if (A <= value and B > value and C > value) {
                     Vector3D A1 = i.getA();
                     Vector3D B1 = i.getB();
                     Vector3D C1 = i.getC();
@@ -401,7 +401,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     else{
                         Triangles.push_back(Triangle(A1, p1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                     }
-                } else if (A > value and B < value and C > value) {
+                } else if (A > value and B <= value and C > value) {
                     Vector3D A1 = i.getB();
                     Vector3D B1 = i.getC();
                     Vector3D C1 = i.getA();
@@ -415,7 +415,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     else{
                         Triangles.push_back(Triangle(A1, p1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                     }
-                } else if (A > value and B > value and C < value) {
+                } else if (A > value and B > value and C <= value) {
                     Vector3D A1 = i.getC();
                     Vector3D B1 = i.getA();
                     Vector3D C1 = i.getB();
@@ -432,9 +432,9 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                 }
             }
             else{
-                if (A > value and B > value and C > value) {
+                if (A >= value and B >= value and C >= value) {
                     Triangles.push_back(i);
-                } else if (A > value and B > value and C < value) {
+                } else if (A >= value and B >= value and C < value) {
                     Vector3D A1 = i.getC();
                     Vector3D B1 = i.getA();
                     Vector3D C1 = i.getB();
@@ -450,7 +450,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                         Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                     }
 
-                } else if (A > value and B < value and C > value) {
+                } else if (A >= value and B < value and C >= value) {
                     Vector3D A1 = i.getB();
                     Vector3D B1 = i.getC();
                     Vector3D C1 = i.getA();
@@ -465,7 +465,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                         Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                         Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                     }
-                } else if (A < value and B > value and C > value) {
+                } else if (A < value and B >= value and C >= value) {
                     Vector3D A1 = i.getA();
                     Vector3D B1 = i.getB();
                     Vector3D C1 = i.getC();
@@ -480,7 +480,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                         Triangles.push_back(Triangle(p1, B1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                         Triangles.push_back(Triangle(B1, C1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                     }
-                } else if (A > value and B < value and C < value) {
+                } else if (A >= value and B < value and C < value) {
                     Vector3D A1 = i.getA();
                     Vector3D B1 = i.getB();
                     Vector3D C1 = i.getC();
@@ -494,7 +494,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     else{
                         Triangles.push_back(Triangle(A1, p1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                     }
-                } else if (A < value and B > value and C < value) {
+                } else if (A < value and B >= value and C < value) {
                     Vector3D A1 = i.getB();
                     Vector3D B1 = i.getC();
                     Vector3D C1 = i.getA();
@@ -508,7 +508,7 @@ std::vector<Triangle> Figures::clipFigures(std::vector<Triangle> triangles) {
                     else{
                         Triangles.push_back(Triangle(A1, p1, p2, i.getColor(), i.getLights(), i.getReflections(), i.getReflectionCoefficient()));
                     }
-                } else if (A < value and B < value and C > value) {
+                } else if (A < value and B < value and C >= value) {
                     Vector3D A1 = i.getC();
                     Vector3D B1 = i.getA();
                     Vector3D C1 = i.getB();
